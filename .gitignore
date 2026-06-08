@@ -1,0 +1,16 @@
+# Defaults
+.DS_Store
+.vscode
+__pycache__
+
+# envs
+.env.navigation
+.env.processing
+.env.vm
+
+# Temp
+site
+
+# Others
+processing/app/database/to_paraquet.py
+navigation/database.sqlite3
