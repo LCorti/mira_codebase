@@ -1,0 +1,77 @@
+# Docker Compose configuration for Processing Service (Desktop/VM)
+# This runs the processing service and MongoDB database
+
+services:
+  processing:
+    build:
+      context: ./processing
+      dockerfile: Dockerfile.multistage.gpu
+    container_name: processing_service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./processing:/app
+      - /app/.venv  # Exclude .venv from volume mount
+      - processing_uv_cache:/root/.cache/uv
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL:-INFO}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_HOST: ${MONGO_HOST:-processing_db}  # Use container name for internal communication
+      MONGO_PORT: ${MONGO_PORT:-27017}
+      QUEUE_WORKERS: ${QUEUE_WORKERS:-1}
+      NAVIGATION_SERVICE_URL: ${NAVIGATION_SERVICE_URL}  # Points to remote laptop
+      PROCESSING_SERVICE_URL: ${PROCESSING_SERVICE_URL}  # This machine's address
+      SEED_DB_ON_BUILD: ${SEED_DB_ON_BUILD:-False}
+      HF_HOME: ${HF_HOME:-/.cache/huggingface}
+    depends_on:
+      - processing-db
+    restart: unless-stopped
+    networks:
+      - processing_network
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 12G
+        reservations:
+          memory: 8G
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  processing-db:
+    image: mongo:8.0
+    container_name: processing_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - processing_db_data:/data/db
+      - ./processing/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: admin
+    restart: unless-stopped
+    networks:
+      - processing_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          memory: 512M
+
+networks:
+  processing_network:
+    driver: bridge
+
+volumes:
+  processing_db_data:
+    driver: local
+  processing_uv_cache:
+    driver: local
+  processing_hf_cache:
+    driver: local

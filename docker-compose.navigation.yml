@@ -1,0 +1,41 @@
+# Docker Compose configuration for Navigation Service (Laptop)
+# This runs only the navigation/frontend service that connects to a remote processing service
+
+services:
+  navigation:
+    build:
+      context: ./navigation
+      dockerfile: Dockerfile.multistage
+    container_name: navigation_service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./navigation:/app
+      - /app/.venv  # Exclude .venv from volume mount
+      - navigation_uv_cache:/root/.cache/uv
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL:-INFO}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      PROCESSING_SERVICE_URL: ${PROCESSING_SERVICE_URL}  # Points to remote desktop/VM
+      NAVIGATION_SERVICE_URL: ${NAVIGATION_SERVICE_URL}  # This machine's address
+      APP_NAME: ${APP_NAME:-MIRA}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      BUILD_DATE: ${BUILD_DATE:-05-08-2025}
+      LICENSE: ${LICENSE:-MIT License}
+      HF_HOME: ${HF_HOME:-/.cache/huggingface}
+      REPORT_DIR: ${REPORT_DIR:-/reports}
+    restart: unless-stopped
+    network_mode: "bridge"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 3G
+        reservations:
+          memory: 1G
+
+volumes:
+  navigation_uv_cache:
+    driver: local
