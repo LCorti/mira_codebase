@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Script to index a corpus from HuggingFace datasets using BM25s and save it for later use.
 
@@ -81,7 +80,7 @@ def index_corpus(
         try:
             stemmer = Stemmer.Stemmer(stemming_language)
             logger.info(f"Using stemmer for language: {stemming_language}")
-        except Exception as e:
+        except Exception as e:  # noqa
             logger.warning(
                 f"Could not initialize stemmer for '{stemming_language}': {e}"
             )
@@ -145,7 +144,7 @@ def index_corpus(
             f.write(f"stemming_language: {stemming_language}\n")
             f.write(f"stopword_language: {stopword_language}\n")
         logger.info("Metadata saved successfully")
-    except Exception as e:
+    except Exception as e:  # noqa
         logger.warning(f"Error saving metadata: {e}")
 
     logger.info(f"\n> Successfully indexed corpus from '{dataset_name}'")
@@ -256,7 +255,7 @@ Examples:
             stopword_language=args.stopword_language,
             save_corpus=not args.no_save_corpus,
         )
-    except Exception as e:
+    except Exception as e:  # noqa
         logger.error(f"Failed to index corpus: {e}")
         sys.exit(1)
 
