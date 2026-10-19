@@ -1,51 +1,58 @@
+from typing import Any
+
 import evaluate
-from typing import List, Union, Any, Optional
 
 from app.models.metrics.base_metric import Metric
 from app.services.logging_service import LoggingService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="metrics.log")
 
+
 class RecallMetric(Metric):
     def __init__(self):
         """
         Initialize the RecallMetric.
         """
-        super().__init__(name="recall", description="Computes the recall metric for model predictions.")
+        super().__init__(
+            name="recall",
+            description="Computes the recall metric for model predictions.",
+        )
         self.metric = evaluate.load("recall")
-    
-    def compute(self, 
-                predictions: List[int], 
-                references: List[int], 
-                labels: Optional[List[int]] = None,
-                pos_label: int = 1,
-                average: str = "weighted",
-                sample_weight: Optional[List[float]] = None,
-                zero_division: Union[int, str] = "warn",
-                **kwargs: Any) -> Union[dict[str, float], dict[str, List[float]]]:
+
+    def compute(
+        self,
+        predictions: list[int],
+        references: list[int],
+        labels: list[int] | None = None,
+        pos_label: int = 1,
+        average: str = "weighted",
+        sample_weight: list[float] | None = None,
+        zero_division: int | str = "warn",
+        **kwargs: Any,
+    ) -> dict[str, float] | dict[str, list[float]]:
         """
         Compute the recall metric with native parameter support.
         See more details about recall at: https://huggingface.co/spaces/evaluate-metric/recall
-        
+
         :param predictions: The predicted labels.
-        :type predictions: List[Union[str, int]]
+        :type predictions: list[Union[str, int]]
         :param references: The ground truth labels.
-        :type references: List[Union[str, int]]
+        :type references: list[Union[str, int]]
         :param labels: The set of labels to include when average is not set to 'binary'. Defaults to None.
-        :type labels: Optional[List[int]], optional
+        :type labels: Optional[list[int]], optional
         :param pos_label: The class label to use as the 'positive class' when calculating the recall. Defaults to 1.
         :type pos_label: int, optional
         :param average: This parameter is required for multiclass/multilabel targets. Defaults to 'weighted'. Options: ['binary', 'micro', 'macro', 'weighted', 'samples', None]
         :type average: str, optional
         :param sample_weight: Sample weights. Defaults to None.
-        :type sample_weight: Optional[List[float]], optional
+        :type sample_weight: Optional[list[float]], optional
         :param zero_division: Sets the value to return when there is a zero division. Defaults to 'warn'. Options: [0, 1, 'warn']
         :type zero_division: Union[int, str], optional
         :param kwargs: Additional keyword arguments for metric computation.
         :type kwargs: Any
-        
+
         :return: Computed recall metric values.
-        :rtype: Union[dict[str, float], dict[str, List[float]]]
+        :rtype: Union[dict[str, float], dict[str, list[float]]]
         """
         # Validate inputs
         if not predictions or not references:
@@ -54,24 +61,30 @@ class RecallMetric(Metric):
         if len(predictions) != len(references):
             logger.error("Predictions and references must have the same length.")
             raise ValueError("Predictions and references must have the same length.")
-        
+
         # Validate average parameter
-        valid_averages = ['binary', 'micro', 'macro', 'weighted', 'samples', None]
+        valid_averages = ["binary", "micro", "macro", "weighted", "samples", None]
         if average not in valid_averages:
-            raise ValueError(f"Invalid average: {average}. Valid averages are: {valid_averages}")
-        
+            raise ValueError(
+                f"Invalid average: {average}. Valid averages are: {valid_averages}"
+            )
+
         # Validate sample_weight if provided
         if sample_weight is not None:
             if len(sample_weight) != len(predictions):
-                raise ValueError("Sample weights must have the same length as predictions and references.")
+                raise ValueError(
+                    "Sample weights must have the same length as predictions and references."
+                )
             if any(w < 0 for w in sample_weight):
                 raise ValueError("Sample weights must be non-negative.")
-        
+
         # Validate zero_division parameter
-        valid_zero_divisions = [0, 1, 'warn']
+        valid_zero_divisions = [0, 1, "warn"]
         if zero_division not in valid_zero_divisions:
-            raise ValueError(f"Invalid zero_division: {zero_division}. Valid values are: {valid_zero_divisions}")
-        
+            raise ValueError(
+                f"Invalid zero_division: {zero_division}. Valid values are: {valid_zero_divisions}"
+            )
+
         try:
             # Prepare arguments for the metric computation
             compute_args = {
@@ -80,15 +93,15 @@ class RecallMetric(Metric):
                 "pos_label": pos_label,
                 "average": average,
                 "zero_division": zero_division,
-                **kwargs
+                **kwargs,
             }
-            
+
             # Add optional parameters only if provided
             if labels is not None:
                 compute_args["labels"] = labels
             if sample_weight is not None:
                 compute_args["sample_weight"] = sample_weight
-            
+
             return self.metric.compute(**compute_args)
         except Exception as e:
-            raise RuntimeError(f"Failed to compute {self.name} metric: {str(e)}") from e
+            raise RuntimeError(f"Failed to compute {self.name} metric: {e!s}") from e
