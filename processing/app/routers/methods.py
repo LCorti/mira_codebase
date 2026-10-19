@@ -1,12 +1,10 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
-from app.config.registry import get_database_service
-
-from app.services.logging_service import LoggingService
-
 from app.controllers.method_controller import MethodController
-
 from app.models.method import Method, MethodUpdate
+from app.services.logging_service import LoggingService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="routes.log")
 
@@ -15,9 +13,13 @@ router = APIRouter(
     tags=["methods"],
 )
 
+
 @router.get("", status_code=200)
 async def index(
-    include: set[str] | None = Query(None, description="Relations to include"),
+    include: Annotated[
+        set[str] | None,
+        Query(description="Relations to include"),
+    ] = None,
 ):
     """
     Returns a list of all methods in the database.
@@ -27,13 +29,14 @@ async def index(
         list[Method]: List of all methods serialized as Method models.
     Raises:
         RuntimeError: If there is an error retrieving methods from the database.
-    """    
+    """
     return MethodController.get_all_methods(include=include)
+
 
 @router.get("/{method_id}", status_code=200)
 async def show(
     method_id: str,
-    include: set[str] | None = Query(None, description="Fields to include"),
+    include: Annotated[set[str] | None, Query(description="Fields to include")] = None,
 ):
     """
     Returns a specific method by its ID.
@@ -46,10 +49,9 @@ async def show(
     """
     return MethodController.get_method_by_id(method_id, include=include)
 
+
 @router.post("", status_code=201)
-async def create(
-    method: Method
-):
+async def create(method: Method):
     """
     Creates a new method in the database.
     Args:
@@ -61,11 +63,9 @@ async def create(
     """
     return MethodController.create_method(method)
 
+
 @router.put("/{method_id}", status_code=200)
-async def update(
-    method_id: str, 
-    method: MethodUpdate
-):
+async def update(method_id: str, method: MethodUpdate):
     """
     Updates an existing method in the database.
     Args:
@@ -78,10 +78,9 @@ async def update(
     """
     return MethodController.update_method(method_id, method)
 
+
 @router.delete("/{method_id}", status_code=204)
-async def delete(
-    method_id: str
-):
+async def delete(method_id: str):
     """
     Deletes a method from the database.
     Args:

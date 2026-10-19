@@ -1,9 +1,13 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.config.registry import get_dataset_loader, get_model_loader
 from app.controllers.metric_controller import MetricController
 from app.controllers.test_controller import TestController
+from app.services.dataset_loader import DatasetLoaderService
 from app.services.logging_service import LoggingService
+from app.services.model_loader import ModelLoaderService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="routes.log")
 
@@ -12,11 +16,12 @@ router = APIRouter(
     tags=["web"],
 )
 
+ModelLoaderDep = Annotated[ModelLoaderService, Depends(get_model_loader)]
+DatasetLoaderDep = Annotated[DatasetLoaderService, Depends(get_dataset_loader)]
+
 
 @router.get("/metadata", status_code=200)
-def metadata(
-    model_loader=Depends(get_model_loader), dataset_loader=Depends(get_dataset_loader)
-):
+def metadata(model_loader: ModelLoaderDep, dataset_loader: DatasetLoaderDep):
     """
     Returns metadata for all datasets.
     Args:

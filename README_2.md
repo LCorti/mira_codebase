@@ -107,7 +107,7 @@ sh seed_dbs.sh
 seed_dbs.bat
 ```
 
-⚠️ The warnings `Failed to sync method <id> after creation` can be ignored.
+ The warnings `Failed to sync method <id> after creation` can be ignored.
 
 ## Distributed Setup
 

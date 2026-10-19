@@ -1,8 +1,10 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.config.registry import get_model_loader
-
 from app.services.logging_service import LoggingService
+from app.services.model_loader import ModelLoaderService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="routes.log")
 
@@ -11,10 +13,11 @@ router = APIRouter(
     tags=["models"],
 )
 
+ModelLoaderDep = Annotated[ModelLoaderService, Depends(get_model_loader)]
+
+
 @router.get("", status_code=200)
-async def index(
-    model_loader = Depends(get_model_loader)
-):
+async def index(model_loader: ModelLoaderDep):
     """
     Returns a list of all models in the system.
     Args:
@@ -29,14 +32,12 @@ async def index(
     except Exception as e:
         logger.error(f"Error retrieving models: {e}")
         raise RuntimeError(f"Failed to retrieve models: {e}")
-    
+
     return models
 
+
 @router.get("/show", status_code=200)
-async def show(
-    model_name: str,
-    model_loader = Depends(get_model_loader)
-):
+async def show(model_name: str, model_loader: ModelLoaderDep):
     """
     Returns the details of a specific model.
     Args:
@@ -51,14 +52,12 @@ async def show(
     except Exception as e:
         logger.error(f"Error retrieving model '{model_name}': {e}")
         raise RuntimeError(f"Failed to retrieve model '{model_name}': {e}")
-    
+
     return model
 
+
 @router.get("/download_size", status_code=200)
-async def download_size(
-    model_name: str,
-    model_loader = Depends(get_model_loader)
-):
+async def download_size(model_name: str, model_loader: ModelLoaderDep):
     """
     Returns the total size of a specific model in bytes.
     Args:
@@ -76,14 +75,12 @@ async def download_size(
     except Exception as e:
         logger.error(f"Error retrieving model '{model_name}' size: {e}")
         return {"model": model_name, "size": 0}
-    
+
     return {"model": model_name, "size": size}
 
+
 @router.get("/config", status_code=200)
-async def config(
-    model_name: str,
-    model_loader = Depends(get_model_loader)
-):
+async def config(model_name: str, model_loader: ModelLoaderDep):
     """
     Returns the configuration of a specific model.
     Args:
@@ -101,11 +98,9 @@ async def config(
 
     return config
 
+
 @router.post("/load", status_code=200)
-async def load_model(
-    model_name: str,
-    model_loader = Depends(get_model_loader)
-):
+async def load_model(model_name: str, model_loader: ModelLoaderDep):
     """
     Loads a specific model into memory.
     Args:
@@ -120,5 +115,5 @@ async def load_model(
     except Exception as e:
         logger.error(f"Error loading model '{model_name}': {e}")
         raise RuntimeError(f"Failed to load model '{model_name}': {e}")
-    
+
     return {"message": f"Model '{model_name}' loaded successfully."}

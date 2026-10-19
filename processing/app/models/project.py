@@ -1,12 +1,11 @@
 from pydantic import Field
 
 from app.config.registry import get_database_service
-
+from app.models.base_model import BaseMongoModel
 from app.services.logging_service import LoggingService
 
-from app.models.base_model import BaseMongoModel
-
 logger = LoggingService.setup_module_logger(__name__, log_filename="models.log")
+
 
 def _get_tests_collection():
     """
@@ -15,42 +14,35 @@ def _get_tests_collection():
     db_service = get_database_service()
     return db_service.get_collection("tests")
 
+
 class Project(BaseMongoModel):
     name: str = Field(max_length=200)
     description: str = Field(default="", max_length=500)
     model_name: str = Field(max_length=200)
-    parameters: dict = Field(default={
-        "task_type": "",
-        "task_parameters": {},
-        "model": {
-            "from_pretrained": {},
-            "inference": {}
-        },
-        "tokenizer": {
-            "from_pretrained": {},
-            "inference": {}
-        },
-        "dataset": {
-            "DATASET_NAME": {
-                "split": "train",
-                "input_column": "input",
-                "reference_column": "reference",
-                "num_samples": 15
-            }
-        },
-        "metrics": {
-            "DATASET_NAME": {
-                "METRIC_NAME": {}
-            }
+    parameters: dict = Field(
+        default={
+            "task_type": "",
+            "task_parameters": {},
+            "model": {"from_pretrained": {}, "inference": {}},
+            "tokenizer": {"from_pretrained": {}, "inference": {}},
+            "dataset": {
+                "DATASET_NAME": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 15,
+                }
+            },
+            "metrics": {"DATASET_NAME": {"METRIC_NAME": {}}},
         }
-    })
-    
+    )
+
     test_ids: list[str] = Field(default=[])
 
     def tests(self):
         """
         Retrieve the tests associated with this project.
-        
+
         :return: List of Test objects associated with this project.
         """
         if not self.test_ids:
@@ -58,14 +50,19 @@ class Project(BaseMongoModel):
             return []
 
         from app.models.test import Test
+
         try:
-            tests = _get_tests_collection().find({"id": {"$in": [test_id for test_id in self.test_ids]}})
-            logger.debug(f"Retrieved {len(self.test_ids)} tests for project with ID {self.id} from database.")
-            
+            tests = _get_tests_collection().find(
+                {"id": {"$in": [test_id for test_id in self.test_ids]}}
+            )
+            logger.debug(
+                f"Retrieved {len(self.test_ids)} tests for project with ID {self.id} from database."
+            )
+
             if not tests:
                 logger.warning(f"No tests found for project with ID {self.id}.")
                 return []
-            
+
             return [Test(**test) for test in tests]
         except Exception as e:
             logger.error(f"Error retrieving tests for project with ID {self.id}: {e}")
@@ -90,12 +87,12 @@ class Project(BaseMongoModel):
             }
 
             data["tests"] = [
-                test.to_dict(include=test_includes)
-                for test in self.tests()
+                test.to_dict(include=test_includes) for test in self.tests()
             ]
             data.pop("test_ids", None)
 
         return data
+
 
 class ProjectUpdate(BaseMongoModel):
     name: str | None = None
