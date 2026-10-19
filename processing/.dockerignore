@@ -1,0 +1,55 @@
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+.venv
+.ENV
+.env
+
+# Ruff
+.ruff_cache/
+.ruff_cache
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+
+# Development
+.git/
+.gitignore
+.pytest_cache/
+.coverage
+.tox/
+.cache/
+
+# Documentation
+README.md
+*.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+app/logs/*
+
+# Testing
+tests/
+test_*.py
+*_test.py
+
+# Don't ignore dependency files - we need these for the build
+!pyproject.toml
+!uv.lock

@@ -1,0 +1,215 @@
+{
+    "lm_diagnostics_accuracy": {
+        "name": "lm_diagnostics_accuracy",
+        "class": "LMDiagnosticsAccuracyDiagnostic",
+        "metadata": {
+            "name": "lm_diagnostics_accuracy",
+            "description": "Psycholinguistic diagnostic accuracy from LM Diagnostics. Measures how accurately a language model predicts psycholinguistic phenomena.",
+            "input_types": [
+                "predictions"
+            ],
+            "output_format": "report_string",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "lm_diagnostics_sensitivity": {
+        "name": "lm_diagnostics_sensitivity",
+        "class": "LMDiagnosticsSensitivityDiagnostic",
+        "metadata": {
+            "name": "lm_diagnostics_sensitivity",
+            "description": "Psycholinguistic diagnostic sensitivity from LM Diagnostics. Measures how sensitive a language model is to psycholinguistic phenomena.",
+            "input_types": [
+                "target_probs"
+            ],
+            "output_format": "report_string",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "hans": {
+        "name": "hans",
+        "class": "HansDiagnostic",
+        "metadata": {
+            "name": "hans",
+            "description": "Heuristic Analysis for NLI Systems (HANS) diagnostic. Evaluates whether NLI models rely on superficial heuristics.",
+            "input_types": [
+                "predictions"
+            ],
+            "output_format": "report_string",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "nli_stress_test": {
+        "name": "nli_stress_test",
+        "class": "NLIStressTestDiagnostic",
+        "metadata": {
+            "name": "nli_stress_test",
+            "description": "Stress Test diagnostic for NLI models. Automatically generate stress tests for word overlap, negation, length mismatch, antonym, spelling error and numerical reasoning.",
+            "input_types": [
+                "predictions"
+            ],
+            "output_format": "report_string",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "sent_eval": {
+        "name": "sent_eval",
+        "class": "SentEvalDiagnostic",
+        "metadata": {
+            "name": "sent_eval",
+            "description": "SentEval is a diagnostic suite designed to evaluate the linguistic properties captured by sentence embeddings, helping to assess how well language models understand various aspects of language.",
+            "input_types": [],
+            "output_format": "report_string",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "holistic_bias": {
+        "name": "holistic_bias",
+        "class": "HolisticBiasDiagnostic",
+        "metadata": {
+            "name": "holistic_bias",
+            "description": "Holistic Bias is a diagnostic dataset designed to identify new biases in language models using a holistic descriptor dataset, helping to evaluate their fairness and bias mitigation.",
+            "input_types": [
+                "predictions"
+            ],
+            "output_format": "report_string",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "lxt": {
+        "name": "lxt",
+        "class": "LxtDiagnostic",
+        "metadata": {
+            "name": "lxt",
+            "description": "Executes the Layer-wise Relevance Propagation for Transformers (LXT) diagnostic from Achtibat et al (2024).",
+            "input_types": [
+                "input_text"
+            ],
+            "output_format": "relevance_scores",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "shap": {
+        "name": "shap",
+        "class": "ShapDiagnostic",
+        "metadata": {
+            "name": "shap",
+            "description": "Diagnostic for evaluating SHapley Additive exPlanations (SHAP). SHAP values explain the output of a model by computing the contribution of each feature to the prediction.",
+            "input_types": [
+                "input_text",
+                "predictions"
+            ],
+            "output_format": "attribution_matrices",
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            }
+        }
+    },
+    "shap_encoder": {
+        "name": "shap_encoder",
+        "class": "ShapEncoderDiagnostic",
+        "metadata": {
+            "name": "shap_encoder",
+            "description": "Diagnostic for evaluating SHapley Additive exPlanations (SHAP) using encoder models. SHAP values explain the output of a model by computing the contribution of each feature to the prediction.",
+            "input_types": [
+                "input_text",
+                "predictions"
+            ],
+            "output_format": "attribution_matrices",
+            "task_types": [
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-retrieval": []
+            }
+        }
+    },
+    "integrated_gradients_encoder": {
+        "name": "integrated_gradients_encoder",
+        "class": "IGEncoderDiagnostic",
+        "metadata": {
+            "name": "IntegratedGradients",
+            "description": "Diagnostic for evaluating Integrated Gradients (IG) using encoder models. IG attributes the prediction of a model to its input features by integrating gradients along the path from a baseline to the input.",
+            "input_types": [
+                "input_text",
+                "predictions"
+            ],
+            "output_format": "attribution_matrices",
+            "task_types": [
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-retrieval": []
+            }
+        }
+    }
+}

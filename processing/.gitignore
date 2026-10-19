@@ -1,0 +1,13 @@
+*.db
+
+venv/
+ENV/
+env/
+.venv/
+
+.ruff_cache/
+
+app/logs/
+*.log
+
+app/storage/*

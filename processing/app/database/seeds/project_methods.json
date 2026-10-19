@@ -1,0 +1,400 @@
+[
+    {
+        "id": "68b3136c936577fd2fe5410a",
+        "name": "Train",
+        "description": "Scientific Papers from ACL Anthology (short).",
+        "dataset_name": "dtk-llms/mira_summarization",
+        "metrics": [
+            "rouge"
+        ],
+        "parameters": {
+            "task_type": "summarization",
+            "task_parameters": {
+                "system_message": "Task: Summarise the following paper\nPaper: <input>\nThe summary of the paper is:"
+            },
+            "model": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "torch_dtype": "auto",
+                    "device_map": "auto",
+                    "attn_implementation": "eager"
+                },
+                "inference": {
+                    "max_new_tokens": 1024,
+                    "min_length": 0,
+                    "early_stopping": false,
+                    "do_sample": false,
+                    "num_beams": 1,
+                    "temperature": 1,
+                    "top_k": 50,
+                    "top_p": 1,
+                    "repetition_penalty": 1,
+                    "length_penalty": 1
+                }
+            },
+            "tokenizer": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "use_fast": true
+                },
+                "inference": {
+                    "padding": true,
+                    "truncation": true,
+                    "return_tensors": "pt",
+                    "add_special_tokens": true
+                }
+            },
+            "dataset": {
+                "split": "train",
+                "input_column": "full_text",
+                "reference_column": "human_summary",
+                "num_samples": 15
+            },
+            "metrics": {
+                "rouge": {}
+            }
+        },
+        "test_id": "68b3136c936577fd2fe54108",
+        "job_ids": [],
+        "result_ids": [],
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "68b3136c936577fd2fe5410b",
+        "name": "Test",
+        "description": "Scientific Papers from ACL Anthology (full).",
+        "dataset_name": "dtk-llms/mira_summarization",
+        "metrics": [
+            "rouge"
+        ],
+        "parameters": {
+            "task_type": "summarization",
+            "task_parameters": {
+                "system_message": "Task: Summarise the following paper\nPaper: <input>\nThe summary of the paper is:"
+            },
+            "model": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "torch_dtype": "auto",
+                    "device_map": "auto",
+                    "attn_implementation": "eager"
+                },
+                "inference": {
+                    "max_new_tokens": 1024,
+                    "min_length": 0,
+                    "early_stopping": false,
+                    "do_sample": false,
+                    "num_beams": 1,
+                    "temperature": 1,
+                    "top_k": 50,
+                    "top_p": 1,
+                    "repetition_penalty": 1,
+                    "length_penalty": 1
+                }
+            },
+            "tokenizer": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "use_fast": true
+                },
+                "inference": {
+                    "padding": true,
+                    "truncation": true,
+                    "return_tensors": "pt",
+                    "add_special_tokens": true
+                }
+            },
+            "dataset": {
+                "split": "test",
+                "input_column": "full_text",
+                "reference_column": "human_summary",
+                "num_samples": 15
+            },
+            "metrics": {
+                "rouge": {}
+            }
+        },
+        "test_id": "68b3136c936577fd2fe54108",
+        "job_ids": [],
+        "result_ids": [],
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "68b19d7dc5487f5c4c93ac9a",
+        "name": "Train",
+        "description": "Scientific Papers from ACL Anthology (short).",
+        "dataset_name": "dtk-llms/mira_simplification",
+        "metrics": [
+            "bertscore"
+        ],
+        "parameters": {
+            "task_type": "text-simplification",
+            "task_parameters": {
+                "system_message": "Task: Simplify the following paper\nPaper: <input>\nThe simplification of the paper is:"
+            },
+            "model": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "torch_dtype": "auto",
+                    "device_map": "auto",
+                    "attn_implementation": "eager"
+                },
+                "inference": {
+                    "max_new_tokens": 1024,
+                    "min_length": 0,
+                    "early_stopping": false,
+                    "do_sample": false,
+                    "num_beams": 1,
+                    "temperature": 1,
+                    "top_k": 50,
+                    "top_p": 1,
+                    "repetition_penalty": 1,
+                    "length_penalty": 1
+                }
+            },
+            "tokenizer": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "use_fast": true
+                },
+                "inference": {
+                    "padding": true,
+                    "truncation": true,
+                    "return_tensors": "pt",
+                    "add_special_tokens": true
+                }
+            },
+            "dataset": {
+                "split": "train",
+                "input_column": "full_text",
+                "reference_column": "human_summary",
+                "num_samples": 15
+            },
+            "metrics": {
+                "bertscore": {}
+            }
+        },
+        "test_id": "68b19d7dc5487f5c4c93ac98",
+        "job_ids": [],
+        "result_ids": [],
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "68b19d7dc5487f5c4c93ac9b",
+        "name": "Test",
+        "description": "Scientific Papers from ACL Anthology (full).",
+        "dataset_name": "dtk-llms/mira_simplification",
+        "metrics": [
+            "bertscore"
+        ],
+        "parameters": {
+            "task_type": "text-simplification",
+            "task_parameters": {
+                "system_message": "Task: Simplify the following paper\nPaper: <input>\nThe simplification of the paper is:"
+            },
+            "model": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "torch_dtype": "auto",
+                    "device_map": "auto",
+                    "attn_implementation": "eager"
+                },
+                "inference": {
+                    "max_new_tokens": 1024,
+                    "min_length": 0,
+                    "early_stopping": false,
+                    "do_sample": false,
+                    "num_beams": 1,
+                    "temperature": 1,
+                    "top_k": 50,
+                    "top_p": 1,
+                    "repetition_penalty": 1,
+                    "length_penalty": 1
+                }
+            },
+            "tokenizer": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "use_fast": true
+                },
+                "inference": {
+                    "padding": true,
+                    "truncation": true,
+                    "return_tensors": "pt",
+                    "add_special_tokens": true
+                }
+            },
+            "dataset": {
+                "split": "test",
+                "input_column": "full_text",
+                "reference_column": "human_summary",
+                "num_samples": 15
+            },
+            "metrics": {
+                "bertscore": {}
+            }
+        },
+        "test_id": "68b19d7dc5487f5c4c93ac98",
+        "job_ids": [],
+        "result_ids": [],
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "68b0b3ec8f65d600585eb976",
+        "name": "Train",
+        "description": "Queries from ACL Anthology for RAG evaluation.",
+        "dataset_name": "dtk-llms/mira_rag_queries",
+        "metrics": [
+            "precision",
+            "recall",
+            "f1"
+        ],
+        "parameters": {
+            "task_type": "text-retrieval",
+            "task_parameters": {
+                "k_sparse": 10,
+                "k_dense": 10,
+                "stopword_language": "english",
+                "stemming_language": "english",
+                "corpus_name": "dtk-llms/mira_rag_corpus",
+                "corpus_split": "train",
+                "corpus_id_column": "doc_idx",
+                "corpus_text_column": "doc_text",
+                "metric_cutoff": 0.8,
+                "qrels_name": "dtk-llms/mira_rag_qrels",
+                "qrels_split": "train",
+                "qrels_query_id_column": "query-id",
+                "qrels_corpus_id_column": "corpus-id"
+            },
+            "model": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "torch_dtype": "torch.float32",
+                    "device_map": "auto",
+                    "attn_implementation": "eager"
+                },
+                "inference": {
+                    "max_new_tokens": 1024,
+                    "min_length": 0,
+                    "early_stopping": false,
+                    "do_sample": false,
+                    "num_beams": 1,
+                    "temperature": 1,
+                    "top_k": 50,
+                    "top_p": 1,
+                    "repetition_penalty": 1,
+                    "length_penalty": 1
+                }
+            },
+            "tokenizer": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "use_fast": true
+                },
+                "inference": {
+                    "padding": true,
+                    "truncation": true,
+                    "return_tensors": "pt",
+                    "add_special_tokens": true
+                }
+            },
+            "dataset": {
+                "split": "train",
+                "input_column": "query",
+                "reference_column": "",
+                "num_samples": 15
+            },
+            "metrics": {
+                "precision": {},
+                "recall": {},
+                "f1": {}
+            }
+        },
+        "test_id": "68b0b3ec8f65d600585eb974",
+        "job_ids": [],
+        "result_ids": [],
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "68b0b3ec8f65d600585eb977",
+        "name": "Test",
+        "description": "Queries from ACL Anthology for RAG evaluation.",
+        "dataset_name": "dtk-llms/mira_rag_queries",
+        "metrics": [
+            "precision",
+            "recall",
+            "f1"
+        ],
+        "parameters": {
+            "task_type": "text-retrieval",
+            "task_parameters": {
+                "k_sparse": 10,
+                "k_dense": 10,
+                "stopword_language": "english",
+                "stemming_language": "english",
+                "corpus_name": "dtk-llms/mira_rag_corpus",
+                "corpus_split": "train",
+                "corpus_id_column": "doc_idx",
+                "corpus_text_column": "doc_text",
+                "metric_cutoff": 0.8,
+                "qrels_name": "dtk-llms/mira_rag_qrels",
+                "qrels_split": "train",
+                "qrels_query_id_column": "query-id",
+                "qrels_corpus_id_column": "corpus-id"
+            },
+            "model": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "torch_dtype": "torch.float32",
+                    "device_map": "auto",
+                    "attn_implementation": "eager"
+                },
+                "inference": {
+                    "max_new_tokens": 1024,
+                    "min_length": 0,
+                    "early_stopping": false,
+                    "do_sample": false,
+                    "num_beams": 1,
+                    "temperature": 1,
+                    "top_k": 50,
+                    "top_p": 1,
+                    "repetition_penalty": 1,
+                    "length_penalty": 1
+                }
+            },
+            "tokenizer": {
+                "from_pretrained": {
+                    "trust_remote_code": false,
+                    "use_fast": true
+                },
+                "inference": {
+                    "padding": true,
+                    "truncation": true,
+                    "return_tensors": "pt",
+                    "add_special_tokens": true
+                }
+            },
+            "dataset": {
+                "split": "test",
+                "input_column": "query",
+                "reference_column": "",
+                "num_samples": 15
+            },
+            "metrics": {
+                "precision": {},
+                "recall": {},
+                "f1": {}
+            }
+        },
+        "test_id": "68b0b3ec8f65d600585eb974",
+        "job_ids": [],
+        "result_ids": [],
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    }
+]

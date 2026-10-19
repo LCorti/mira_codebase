@@ -1,0 +1,751 @@
+[
+    {
+        "id": "699b2648873b6c39398a0001",
+        "name": "LAMBADA",
+        "description": "Long context last-word prediction.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "system_message": "Finish the following passage by adding a SINGLE word:"
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/lambada": {
+                    "split": "validation",
+                    "input_column": "text",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {
+                "dtk-llms/lambada": {
+                    "accuracy": {},
+                    "perplexity": {},
+                    "median_rank_correct_word": {}
+                }
+            }
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0001",
+            "689b2648873b6c39398a0002",
+            "689b2648873b6c39398a0003"
+        ],
+        "metadata": {
+            "description": "LAMBADA is a dataset for evaluating the ability of computational models to understand and predict words in a broad discourse context. The task involves predicting the final word of a passage, which requires comprehension of the entire passage rather than just local context.",
+            "paper_name": "The LAMBADA dataset: Word prediction requiring a broad discourse context",
+            "paper_ref": "Paperno et al. (2016)",
+            "paper_source": "https://aclanthology.org/P16-1144/",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0002",
+        "name": "XSTest",
+        "description": "Identifying Exaggerated Safety Behaviors in Large Language Models.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "system_message": ""
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/XSTest": {
+                    "split": "train",
+                    "input_column": "prompt",
+                    "reference_column": "label",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {
+                "dtk-llms/XSTest": {
+                    "compliance_check": {}
+                }
+            }
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0004"
+        ],
+        "metadata": {
+            "description": "XSTest is a test suite designed to identify exaggerated safety behaviors in large language models, helping to evaluate their compliance with safety standards.",
+            "paper_name": "XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models",
+            "paper_ref": "Röttger et al. (2024)",
+            "paper_source": "https://aclanthology.org/2024.naacl-long.301/",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0003",
+        "name": "LM Diagnostics",
+        "description": "Psycholinguistic tests for language models.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "system_message": ""
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/lm-diagnostics-cprag": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                },
+                "dtk-llms/lm-diagnostics-negnat": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                },
+                "dtk-llms/lm-diagnostics-negsimp": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                },
+                "dtk-llms/lm-diagnostics-role": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0005",
+            "689b2648873b6c39398a0006",
+            "689b2648873b6c39398a0007",
+            "689b2648873b6c39398a0008"
+        ],
+        "metadata": {
+            "description": "LM Diagnostics is a collection of psycholinguistic tests designed to evaluate the understanding and processing of various linguistic phenomena of a language model.",
+            "paper_name": "What BERT Is Not: Lessons from a New Suite of Psycholinguistic Diagnostics for Language Models",
+            "paper_ref": "Ettinger et al. (2020)",
+            "paper_source": "https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00298/43535/What-BERT-Is-Not-Lessons-from-a-New-Suite-of",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0004",
+        "name": "HANS",
+        "description": "Heuristic Analysis for NLI Systems (HANS).",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "system_message": "What is the relationship between the premise and hypothesis?\nAnswer with one of: entailment, contradiction. Neutral is not an option.\n\n"
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/hans": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0009"
+        ],
+        "metadata": {
+            "description": "HANS (Heuristic Analysis for NLI Systems) is a diagnostic dataset designed to evaluate reliance on syntactic heuristics of natural language inference models, helping to identify whether models are making correct inferences for the right reasons.",
+            "paper_name": "Right for the Wrong Reasons: Diagnosing Syntactic Heuristics in Natural Language Inference",
+            "paper_ref": "Thomas et al. (2019)",
+            "paper_source": "https://aclanthology.org/P19-1334/",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0005",
+        "name": "NLIStressTest",
+        "description": "Stress tests for LLM inference (NLIStressTest).",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "system_message": "What is the relationship between the premise and the hypothesis?\nAnswer with one of: entailment, contradiction, neutral.\n\n"
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/hans": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0010"
+        ],
+        "metadata": {
+            "description": "NLIStressTest is a diagnostic dataset designed to evaluate the robustness of natural language inference models by subjecting them to stress tests that challenge their understanding of nuanced linguistic phenomena.",
+            "paper_name": "Stress Test Evaluation for Natural Language Inference",
+            "paper_ref": "Naik et al. (2018)",
+            "paper_source": "https://aclanthology.org/P19-1334/",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Really-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0006",
+        "name": "SentEval",
+        "description": "SentEval library for sentence embeddings. ",
+        "default": true,
+        "diagnostic_only": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {},
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/SentEval": {
+                    "split": "train",
+                    "input_column": "input",
+                    "reference_column": "reference",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0011"
+        ],
+        "metadata": {
+            "description": "SentEval is a diagnostic suite designed to evaluate the linguistic properties captured by sentence embeddings, helping to assess how well language models understand various aspects of language.",
+            "paper_name": "What you can cram into a single $&!#* vector: Probing sentence embeddings for linguistic properties",
+            "paper_ref": "Conneau et al. (2018)",
+            "paper_source": "https://aclanthology.org/P18-1198/",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0008",
+        "name": "Holistic Bias",
+        "description": "Bias evaluation using a holistic descriptor dataset.",
+        "default": true,
+        "diagnostic_only": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {},
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "dtk-llms/HolisticBias": {
+                    "split": "train",
+                    "input_column": "text",
+                    "reference_column": "text",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0017",
+            "689b2648873b6c39398a0018"
+        ],
+        "metadata": {
+            "description": "Holistic Bias is a diagnostic dataset designed to identify new biases in language models using a holistic descriptor dataset, helping to evaluate their fairness and bias mitigation.",
+            "paper_name": "Im sorry to hear that: Finding New Biases in Language Models with a Holistic Descriptor Dataset",
+            "paper_ref": "Smith et al. (2022)",
+            "paper_source": "https://aclanthology.org/2022.emnlp-main.625/",
+            "publisher": "Association for Computational Linguistics",
+            "booktitle": "Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Really-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0009",
+        "name": "LXT",
+        "description": "A test for the Layer-wise Relevance Propagation for Transformers (LXT) diagnostic.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {},
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "num_samples": 10
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0019"
+        ],
+        "metadata": {
+            "description": "LXT (Layer-wise Relevance Propagation for Transformers) is a diagnostic method designed to provide attention-aware explanations for transformer-based models, helping to interpret and understand their decision-making processes.",
+            "paper_name": "AttnLRP: Attention-Aware Layer-Wise Relevance Propagation for Transformers",
+            "paper_ref": "Achtibat et al. (2024)",
+            "paper_source": "https://proceedings.mlr.press/v235/achtibat24a.html",
+            "publisher": "PMLR",
+            "booktitle": "Proceedings of the 41st International Conference on Machine Learning",
+            "tags": [
+                "method"
+            ],
+            "diagnostic_tag": "Really-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0010",
+        "name": "SHAP",
+        "description": "A test for Shapley Additive Explanations (SHAP) diagnostic.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {},
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "num_samples": 10
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0020"
+        ],
+        "metadata": {
+            "description": "Shapley Additive Explanations (SHAP) is a diagnostic method designed to provide consistent and locally accurate attribution values for model predictions, helping to interpret and understand the contributions of individual features.",
+            "paper_name": "A Unified Approach to Interpreting Model Predictions",
+            "paper_ref": "Lundberg, Scott M and Lee, Su-In (2017)",
+            "paper_source": "https://papers.nips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html",
+            "booktitle": "Advances in Neural Information Processing Systems 30 (NIPS 2017)",
+            "publisher": "Curran Associates, Inc.",
+            "tags": [
+                "method"
+            ],
+            "diagnostic_tag": "Really-Know",
+            "tasks": [
+                "text-simplification",
+                "summarization"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0011",
+        "name": "BeIR/trec-covid",
+        "description": "BeIR/trec-covid is part of a Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models. It is designed to assess retrieval models on specialised topics; COVID-19 in this case.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "k_sparse": 10,
+                "k_dense": 10,
+                "stopword_language": "english",
+                "stemming_language": "english",
+                "corpus_name": "BeIR/trec-covid",
+                "corpus_split": "corpus",
+                "corpus_id_column": "_id",
+                "corpus_text_column": "text",
+                "metric_cutoff": 0.8,
+                "qrels_name": "BeIR/trec-covid-qrels",
+                "qrels_split": "test",
+                "qrels_query_id_column": "query-id",
+                "qrels_corpus_id_column": "corpus-id"
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "BeIR/trec-covid": {
+                    "split": "queries",
+                    "query_id_column": "_id",
+                    "input_column": "text",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0021"
+        ],
+        "metadata": {
+            "description": "TREC-COVID is a test set from the BEIR benchmark designed to evaluate information retrieval models in the context of COVID-19 related literature, helping to assess their effectiveness in retrieving relevant documents.",
+            "paper_name": "BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models",
+            "paper_ref": "Thankur et al. (2021)",
+            "paper_source": "https://openreview.net/forum?id=wCu6T5xFjeJ",
+            "booktitle": "Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2)",
+            "publisher": "Neural Information Processing Systems Foundation",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-retrieval"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0012",
+        "name": "BeIR/scifact",
+        "description": "BeIR/scifact is part of a Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models. It is designed to assess retrieval models for fact-checking tasks. In this case, scientific claims need to be verified using evidence from scientific literature.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "k_sparse": 10,
+                "k_dense": 10,
+                "stopword_language": "english",
+                "stemming_language": "english",
+                "corpus_name": "BeIR/scifact",
+                "corpus_split": "corpus",
+                "corpus_id_column": "_id",
+                "corpus_text_column": "text",
+                "metric_cutoff": 0.8,
+                "qrels_name": "BeIR/scifact-qrels",
+                "qrels_split": "test",
+                "qrels_query_id_column": "query-id",
+                "qrels_corpus_id_column": "corpus-id"
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "BeIR/scifact": {
+                    "split": "queries",
+                    "query_id_column": "_id",
+                    "input_column": "text",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0022"
+        ],
+        "metadata": {
+            "description": "Scifacts is a dataset within the BEIR benchmark designed for evaluating information retrieval models on scientific fact-checking tasks, helping to assess their ability to retrieve relevant scientific literature.",
+            "paper_name": "BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models",
+            "paper_ref": "Thankur et al. (2021)",
+            "paper_source": "https://openreview.net/forum?id=wCu6T5xFjeJ",
+            "booktitle": "Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2)",
+            "publisher": "Neural Information Processing Systems Foundation",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-retrieval"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0013",
+        "name": "BeIR/scidocs",
+        "description": "BeIR/scidocs is part of a Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models. It is designed to assess retrieval models on predicting scientific citations, a key signal of relatedness between scientific papers.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {
+                "k_sparse": 10,
+                "k_dense": 10,
+                "stopword_language": "english",
+                "stemming_language": "english",
+                "corpus_name": "BeIR/scidocs",
+                "corpus_split": "corpus",
+                "corpus_id_column": "_id",
+                "corpus_text_column": "text",
+                "metric_cutoff": 0.8,
+                "qrels_name": "BeIR/scidocs-qrels",
+                "qrels_split": "test",
+                "qrels_query_id_column": "query-id",
+                "qrels_corpus_id_column": "corpus-id"
+            },
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "BeIR/scidocs": {
+                    "split": "queries",
+                    "query_id_column": "_id",
+                    "input_column": "text",
+                    "num_samples": 10
+                }
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0023"
+        ],
+        "metadata": {
+            "description": "Scidocs is a dataset within the BEIR benchmark that focuses on scientific document retrieval, helping to evaluate the performance of information retrieval models in accessing and retrieving relevant scientific literature.",
+            "paper_name": "BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models",
+            "paper_ref": "Thankur et al. (2021)",
+            "paper_source": "https://openreview.net/forum?id=wCu6T5xFjeJ",
+            "booktitle": "Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2)",
+            "publisher": "Neural Information Processing Systems Foundation",
+            "tags": [
+                "dataset"
+            ],
+            "diagnostic_tag": "Should-Know",
+            "tasks": [
+                "text-retrieval"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0014",
+        "name": "SHAP (Encoder)",
+        "description": "A test for Shapley Additive Explanations (SHAP) diagnostic using encoder models.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {},
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "num_samples": 10
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0024"
+        ],
+        "metadata": {
+            "description": "Shapley Additive Explanations (SHAP) is a diagnostic method designed to provide consistent and locally accurate attribution values for model predictions, helping to interpret and understand the contributions of individual features.",
+            "paper_name": "A Unified Approach to Interpreting Model Predictions",
+            "paper_ref": "Lundberg, Scott M and Lee, Su-In (2017)",
+            "paper_source": "https://papers.nips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html",
+            "booktitle": "Advances in Neural Information Processing Systems 30 (NIPS 2017)",
+            "publisher": "Curran Associates, Inc.",
+            "tags": [
+                "method"
+            ],
+            "diagnostic_tag": "Really-Know",
+            "tasks": [
+                "text-retrieval"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    },
+    {
+        "id": "699b2648873b6c39398a0015",
+        "name": "Integrated Gradients (Encoder)",
+        "description": "A test for Integrated Gradients (IG) diagnostic using encoder models.",
+        "default": true,
+        "parameters": {
+            "task_type": "",
+            "task_parameters": {},
+            "model": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "tokenizer": {
+                "from_pretrained": {},
+                "inference": {}
+            },
+            "dataset": {
+                "num_samples": 10
+            },
+            "metrics": {}
+        },
+        "project_id": "",
+        "method_ids": [
+            "689b2648873b6c39398a0025"
+        ],
+        "metadata": {
+            "description": "Integrated Gradients (IG) is a diagnostic method designed to attribute the prediction of a model to its input features by integrating gradients along the path from a baseline to the input, helping to interpret and understand the contributions of individual features.",
+            "paper_name": "Axiomatic attribution for deep networks",
+            "paper_ref": "Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi (2017)",
+            "paper_source": "https://dl-acm-org.tudelft.idm.oclc.org/doi/10.5555/3305890.3306024",
+            "booktitle": "Proceedings of the 34th International Conference on Machine Learning",
+            "publisher": "JMLR.org",
+            "tags": [
+                "method"
+            ],
+            "diagnostic_tag": "Really-Know",
+            "tasks": [
+                "text-retrieval"
+            ]
+        },
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "updated_at": "2025-01-01T00:00:00+00:00"
+    }
+]

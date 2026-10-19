@@ -1,0 +1,11 @@
+{
+    "encoder-only": [
+        "text-retrieval"
+    ],
+    "encoder-decoder": [
+        "summarization"
+    ],
+    "decoder-only": [
+        "text-simplification"
+    ]
+}

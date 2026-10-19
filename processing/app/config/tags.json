@@ -1,0 +1,117 @@
+{
+    "incorrect_output": {
+        "name": "Incorrect Output",
+        "description": "For cases in which we have a definitive ground truth, e.g., mathematical problems.",
+        "paper_reference": "",
+        "category": "Symptom"
+    },
+    "poor_performance": {
+        "name": "Poor Performance",
+        "description": "The model does not satisfy metrics of interest. This is application dependent.",
+        "paper_reference": "",
+        "category": "Symptom"
+    },
+    "repetitive_output": {
+        "name": "Repetitive Output",
+        "description": "The model starts repeating the output tokens at any point during generation.",
+        "paper_reference": "https://arxiv.org/abs/1904.09751",
+
+        "category": "Symptom"
+    },
+    "instruction_negligence": {
+        "name": "Instruction Negligence",
+        "description": "An instruction (or a series thereof) is not followed properly, or ignored altogether. In cases where a series of instructions is provided, order is ignored too.",
+        "paper_reference": "https://aclanthology.org/2024.findings-emnlp.92/",
+        "category": "Symptom"
+    },
+    "exaggerated_safety": {
+        "name": "Exaggerated Safety",
+        "description": "Safe prompts are refused because, for instance, the follow the same structure as unsafe ones or mention sensitive topics.",
+        "paper_reference": "https://aclanthology.org/2024.naacl-long.301/",
+        "category": "Symptom"
+    },
+    "harmful_output": {
+        "name": "Harmful Output",
+        "description": "The outputs are toxic, reflect societal biases,  stereotypes, or promote unethical practices. This can be application dependent.",
+        "paper_reference": "https://arxiv.org/abs//2306.11698",
+        "category": "Symptom"
+    },
+    "vague_output": {
+        "name": "Vague Output",
+        "description": "The output does not provide an answer to the query, is phrased ambiguously, lacks detail, or a combination of thereof.",
+        "paper_reference": "https://aclanthology.org/2024.emnlp-main.119/",
+        "category": "Symptom"
+    },
+    "fragility_to_natural_alterations": {
+        "name": "Fragility to Natural Alterations",
+        "description": "The model output changes given data samples that are semantically equivalent and grammatically correct.",
+        "paper_reference": "https://ojs.aaai.org/index.php/AAAI/article/view/6311",
+        "category": "Sign"
+    },
+    "intrinsic_hallucination": {
+        "name": "Intrinsic Hallucination",
+        "description": "The generated output contradicts the source content.",
+        "paper_reference": "https://dl.acm.org/doi/full/10.1145/3571730",
+        "category": "Sign"
+    },
+    "extrinsic_hallucination": {
+        "name": "Extrinsic Hallucination",
+        "description": "The generated output can neither be supported nor contradicted from the source content.",
+        "paper_reference": "https://dl.acm.org/doi/full/10.1145/3571730",
+        "category": "Sign"
+    },
+    "miscalibrated_model": {
+        "name": "Miscalibrated Model",
+        "description": "The output probabilities are not consistent with its output. This can manifest as either under-confident and over-confident models.",
+        "paper_reference": "https://link.springer.com/article/10.1007/s10462-025-11242-6",
+        "category": "Sign"
+    },
+    "wrong_task_decomposition": {
+        "name": "Wrong Task Decomposition",
+        "description": "The model is either unable to decompose tasks properly or does so incorrectly",
+        "paper_reference": "https://arxiv.org/abs/2210.02406",
+        "category": "Sign"
+    },
+    "misplaced_attention": {
+        "name": "Misplaced Attention",
+        "description": "Inspection (at selected layers) of the attention scores reveals that the model attends incorrectly to input tokens. For instance, attending to irrelevant input tokens.",
+        "paper_reference": "https://arxiv.org/abs/2309.17453",
+        "category": "Sign"
+    },
+    "misplaced_token_attribution": {
+        "name": "Misplaced Token Attribution",
+        "description": "Token-level attribution scores (output -> input) reveal that the model attends incorrectly to input tokens. For instance, attending to irrelevant input tokens.",
+        "paper_reference": "https://aclanthology.org/2024.lrec-main.600/",
+        "category": "Sign"
+    },
+    "shortcuts_reliance": {
+        "name": "Shortcuts Reliance",
+        "description": "The model relies on spurious or shallow input cues (e.g., text structure or specific words) to generate its output.",
+        "paper_reference": "",
+        "category": "Failure Pattern"
+    },
+    "ignoring_input": {
+        "name": "Ignoring Input",
+        "description": "The model ignores relevant parts of the input. These can be both instruction-related and content-related.",
+        "paper_reference": "",
+        "category": "Failure Pattern"
+    },
+    "stereotyping": {
+        "name": "Stereotyping",
+        "description": "The model relies on, amplifies, or generates text that contains stereotypes. These can be harmful ones or not.",
+        "paper_reference": "",
+        "category": "Failure Pattern"
+    },
+    "mode_collapse": {
+        "name": "Mode Collapse",
+        "description": "The model produces repeated responses (or template-like) regardless of the decoding strategy selected.",
+        "paper_reference": "",
+        "category": "Failure Pattern"
+    },
+    "reasoning_inability": {
+        "name": "Reasoning Inability",
+        "description": "The model is able to resolve input queries correctly, but its reasoning (and steps, if necessary) is inconsistent or incorrect.",
+        "paper_reference": "",
+        "category": "Failure Pattern"
+    }
+}

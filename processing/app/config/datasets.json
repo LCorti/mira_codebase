@@ -1,0 +1,40 @@
+{
+    "dtk-llms/mira_rag_queries": {
+        "name": "dtk-llms/mira_rag_queries",
+        "description": "A dataset for evaluating the model's performance on retrieval-augmented generation tasks.",
+        "num_samples": 60,
+        "splits": [
+            "train",
+            "test"
+        ],
+        "task_types": [
+            "text-retrieval"
+        ]
+    },
+    "dtk-llms/mira_summarization": {
+        "name": "dtk-llms/mira_summarization",
+        "description": "A dataset for evaluating the model's performance on summarization tasks.",
+        "num_samples": 1088,
+        "splits": [
+            "train",
+            "test"
+        ],
+        "task_types": [
+            "summarization",
+            "text-generation"
+        ]
+    },
+    "dtk-llms/mira_simplification": {
+        "name": "dtk-llms/mira_simplification",
+        "description": "A dataset for evaluating the model's performance on text simplification tasks.",
+        "num_samples": 1088,
+        "splits": [
+            "train",
+            "test"
+        ],
+        "task_types": [
+            "text-generation",
+            "text-simplification"
+        ]
+    }
+}

@@ -1,0 +1,588 @@
+{
+    "accuracy": {
+        "name": "accuracy",
+        "class": "AccuracyMetric",
+        "metadata": {
+            "name": "accuracy",
+            "description": "Computes accuracy metric for classification tasks",
+            "formula": "(TP + TN) / (TP + TN + FP + FN)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "accuracy"
+            ],
+            "task_types": [
+                "text-retrieval",
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-retrieval": [],
+                "text-generation": [
+                    "text-simplification"
+                ],
+                "summarization": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Accuracy"
+        }
+    },
+    "rouge": {
+        "name": "rouge",
+        "class": "RougeMetric",
+        "metadata": {
+            "name": "rouge",
+            "description": "Computes ROUGE metric for text generation tasks",
+            "formula": "\u03a3(n-grams in ref \u2229 n-grams in pred) / \u03a3(n-grams in ref)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "multiple_scores",
+            "output_metrics": [
+                "rouge1",
+                "rouge2",
+                "rougeL",
+                "rougeLsum"
+            ],
+            "task_types": [
+                "text-generation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [],
+                "summarization": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/W04-1013/"
+        }
+    },
+    "bleu": {
+        "name": "bleu",
+        "class": "BleuMetric",
+        "metadata": {
+            "name": "bleu",
+            "description": "Computes BLEU metric for machine translation and text generation tasks",
+            "formula": "BP x exp(\u03a3(w_n x log(p_n))) where p_n is n-gram precision",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "multiple_scores",
+            "output_metrics": [
+                "bleu",
+                "precisions",
+                "brevity_penalty",
+                "length_ratio",
+                "translation_length",
+                "reference_length"
+            ],
+            "task_types": [
+                "translation",
+                "text-generation"
+            ],
+            "sub_task_types": {
+                "translation": [],
+                "text-generation": [
+                    "text-simplification"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/P02-1040/"
+        }
+    },
+    "meteor": {
+        "name": "meteor",
+        "class": "MeteorMetric",
+        "metadata": {
+            "name": "meteor",
+            "description": "Computes METEOR metric for machine translation evaluation",
+            "formula": "(1 - penalty) x harmonic_mean(precision, recall)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "meteor"
+            ],
+            "task_types": [
+                "translation",
+                "text-generation"
+            ],
+            "sub_task_types": {
+                "translation": [],
+                "text-generation": [],
+                "summarization": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/W05-0909/"
+        }
+    },
+    "bertscore": {
+        "name": "bertscore",
+        "class": "BertScoreMetric",
+        "metadata": {
+            "name": "bertscore",
+            "description": "Computes BERTScore metric for text generation evaluation using BERT embeddings",
+            "formula": "cosine_similarity(BERT_embeddings(pred), BERT_embeddings(ref))",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "multiple_scores",
+            "output_metrics": [
+                "precision",
+                "recall",
+                "f1"
+            ],
+            "task_types": [
+                "text-generation",
+                "translation",
+                "summarization"
+            ],
+            "sub_task_types": {
+                "text-generation": [],
+                "translation": [],
+                "summarization": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://arxiv.org/abs/1904.09675"
+        }
+    },
+    "precision": {
+        "name": "precision",
+        "class": "PrecisionMetric",
+        "metadata": {
+            "name": "precision",
+            "description": "Computes precision metric for classification tasks",
+            "formula": "TP / (TP + FP)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "precision"
+            ],
+            "task_types": [
+                "text-classification",
+                "token-classification",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-classification": [],
+                "token-classification": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Precision_and_recall"
+        }
+    },
+    "recall": {
+        "name": "recall",
+        "class": "RecallMetric",
+        "metadata": {
+            "name": "recall",
+            "description": "Computes recall metric for classification tasks",
+            "formula": "TP / (TP + FN)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "recall"
+            ],
+            "task_types": [
+                "text-classification",
+                "token-classification",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-classification": [],
+                "token-classification": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Precision_and_recall"
+        }
+    },
+    "f1": {
+        "name": "f1",
+        "class": "F1Metric",
+        "metadata": {
+            "name": "f1",
+            "description": "Computes F1 score metric for classification tasks",
+            "formula": "2 x (precision x recall) / (precision + recall)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "f1"
+            ],
+            "task_types": [
+                "text-classification",
+                "token-classification",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-classification": [],
+                "token-classification": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/F1_score"
+        }
+    },
+    "average_precision": {
+        "name": "average_precision",
+        "class": "AveragePrecisionMetric",
+        "metadata": {
+            "name": "average_precision",
+            "description": "Computes Average Precision (AP) metric for binary classification and ranking tasks",
+            "formula": "\u03a3(P(k) x rel(k)) where P(k) is precision at rank k",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "Average Precision"
+            ],
+            "task_types": [
+                "text-classification",
+                "token-classification",
+                "text-ranking",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-classification": [],
+                "token-classification": [],
+                "text-ranking": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Average_precision"
+        }
+    },
+    "mean_average_precision": {
+        "name": "mean_average_precision",
+        "class": "MeanAveragePrecisionMetric",
+        "metadata": {
+            "name": "mean_average_precision",
+            "description": "Computes Mean Average Precision (MAP) metric for multi-class classification and information retrieval tasks",
+            "formula": "(1/Q) x \u03a3(AP_q) where Q is number of queries and AP_q is average precision for query q",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "Mean Average Precision"
+            ],
+            "task_types": [
+                "text-classification",
+                "token-classification",
+                "text-ranking",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-classification": [],
+                "token-classification": [],
+                "text-ranking": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Mean_average_precision"
+        }
+    },
+    "ndcg": {
+        "name": "ndcg",
+        "class": "NDCGMetric",
+        "metadata": {
+            "name": "ndcg",
+            "description": "Computes Normalized Discounted Cumulative Gain (NDCG) metric for ranking tasks with graded relevance",
+            "formula": "DCG@k / IDCG@k where DCG = \u03a3(2^rel_i - 1) / log2(i + 1)",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "ndcg"
+            ],
+            "task_types": [
+                "text-ranking",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-ranking": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Discounted_cumulative_gain"
+        }
+    },
+    "mrr": {
+        "name": "mrr",
+        "class": "MRRMetric",
+        "metadata": {
+            "name": "mrr",
+            "description": "Computes Mean Reciprocal Rank (MRR) metric for ranking tasks",
+            "formula": "(1/|Q|) x \u03a3(1/rank_i) where rank_i is the rank of the first relevant item",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "mrr"
+            ],
+            "task_types": [
+                "text-ranking",
+                "text-retrieval"
+            ],
+            "sub_task_types": {
+                "text-ranking": [],
+                "text-retrieval": [
+                    "document-retrieval"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://en.wikipedia.org/wiki/Mean_reciprocal_rank"
+        }
+    },
+    "readability": {
+        "name": "readability",
+        "class": "ReadabilityMetric",
+        "metadata": {
+            "name": "readability",
+            "description": "Computes various readability metrics for text analysis",
+            "formula": "Multiple formulas: Flesch-Kincaid, Gunning Fog, Coleman-Liau, etc.",
+            "range": "Varies by metric (e.g., Flesch: 0-100, Grade levels: 1-20+)",
+            "input_types": [
+                "texts"
+            ],
+            "output_format": "multiple_scores",
+            "output_metrics": [
+                "Flesh-Kincaid Grade Level",
+                "Flesch Reading Ease",
+                "Dale-Chall Readability",
+                "Automated Readability Index",
+                "Coleman-Liau Index",
+                "Gunning Fog Score",
+                "SMOG Index",
+                "Spache Readability",
+                "Linsear Write"
+            ],
+            "task_types": [
+                "summarization",
+                "text-generation"
+            ],
+            "sub_task_types": {
+                "summarization": [],
+                "text-generation": [
+                    "text-simplification"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://py-readability-metrics.readthedocs.io/en/latest/"
+        }
+    },
+    "wecheck": {
+        "name": "wecheck",
+        "class": "WeCheckMetric",
+        "metadata": {
+            "name": "wecheck",
+            "description": "Evaluates factual consistency between premise and hypothesis using WeCheck model.",
+            "formula": "WeCheck score based on transformer model predictions for factual consistency",
+            "range": "0-1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "multiple_scores",
+            "output_metrics": [
+                "Factual Consistency",
+                "Binary Consistency"
+            ],
+            "task_types": [
+                "text-classification",
+                "summarization",
+                "text-generation"
+            ],
+            "sub_task_types": {
+                "text-classification": [],
+                "summarization": [],
+                "text-generation": [
+                    "text-simplification"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/2023.acl-long.18/"
+        }
+    },
+    "harim_plus": {
+        "name": "harim_plus",
+        "class": "HarimPlusMetric",
+        "metadata": {
+            "name": "harim_plus",
+            "description": "HaRiM+ is a reference-less evaluation metric for summarization quality assessment using a summarization model.",
+            "formula": "HaRiM+ score based on neural model assessment of summary quality without references",
+            "range": "unbounded (higher is better)",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "HaRiM+ Score"
+            ],
+            "task_types": [
+                "summarization"
+            ],
+            "sub_task_types": {
+                "summarization": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/2022.aacl-main.66/"
+        }
+    },
+    "sari": {
+        "name": "sari",
+        "class": "SariMetric",
+        "metadata": {
+            "name": "sari",
+            "description": "Sentence-level evaluation metric for text simplification. It compares the predicted simplified sentences against the reference and the source sentence.",
+            "formula": "SARI score based on n-gram precision and recall between simplified and reference sentences.",
+            "range": "0-100",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "SARI Score"
+            ],
+            "task_types": [
+                "text-generation"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ]
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/Q16-1029/"
+        }
+    },
+    "perplexity": {
+        "name": "perplexity",
+        "class": "PerplexityMetric",
+        "metadata": {
+            "name": "perplexity",
+            "description": "Computes the perplexity metric for model predictions. Perplexity measures how well a probability model predicts a sample.",
+            "formula": "e**(sum(losses) / num_tokenized_tokens)",
+            "range": "0-\u221e (lower is better)",
+            "input_types": [
+                "predictions"
+            ],
+            "output_format": "single_score",
+            "task_types": [
+                "text-generation"
+            ],
+            "sub_task_types": {
+                "text-generation": [
+                    "text-simplification"
+                ]
+            },
+            "task_blacklist": [
+                "summarization"
+            ],
+            "paper_ref": "https://en.wikipedia.org/wiki/Perplexity"
+        }
+    },
+    "median_rank_correct_word": {
+        "name": "median_rank_correct_word",
+        "class": "MRCWMetric",
+        "metadata": {
+            "name": "median_rank_correct_word",
+            "description": "Median Rank of the Correct Word (MRCW) measures how well a model ranks the correct next word in its predictions.",
+            "formula": "Median rank position of the correct next word in the predicted logits",
+            "range": "1-Vocab Size (lower is better)",
+            "input_types": [
+                "predictions",
+                "references",
+                "logits"
+            ],
+            "output_format": "single_score",
+            "output_metrics": [
+                "Median Rank"
+            ],
+            "task_types": [
+                "median-rank-correct-word"
+            ],
+            "sub_task_types": {
+                "median-rank-correct-word": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/P16-1144/"
+        }
+    },
+    "compliance_check": {
+        "name": "compliance_check",
+        "class": "ComplianceCheckMetric",
+        "metadata": {
+            "name": "compliance_check",
+            "description": "Compliance Check Metric evaluates the adherence of model predictions to safety guidelines. It classifies outputs as compliant or non-compliant based on predefined rules.",
+            "formula": "Compliance label (0: compliant, 1: non-compliant)",
+            "range": "0 or 1",
+            "input_types": [
+                "predictions",
+                "references"
+            ],
+            "output_format": "dict",
+            "output_metrics": [
+                "Compliance Label"
+            ],
+            "task_types": [
+                "compliance-check"
+            ],
+            "sub_task_types": {
+                "compliance-check": []
+            },
+            "task_blacklist": [],
+            "paper_ref": "https://aclanthology.org/2024.naacl-long.301/"
+        }
+    }
+}

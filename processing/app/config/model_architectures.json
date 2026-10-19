@@ -1,0 +1,83 @@
+{
+    "model_architectures": {
+        "encoder_only": [
+            "BertModel",
+            "BertForMaskedLM",
+            "BertForSequenceClassification",
+            "RobertaModel",
+            "RobertaForMaskedLM",
+            "RobertaForSequenceClassification",
+            "DistilBertModel",
+            "DistilBertForMaskedLM",
+            "DistilBertForSequenceClassification",
+            "AlbertModel",
+            "AlbertForMaskedLM",
+            "AlbertForSequenceClassification",
+            "ElectraModel",
+            "ElectraForMaskedLM",
+            "ElectraForSequenceClassification",
+            "DeBertaModel",
+            "DeBertaForMaskedLM",
+            "DeBertaForSequenceClassification",
+            "DeBertaV2Model",
+            "DeBertaV2ForMaskedLM",
+            "DeBertaV2ForSequenceClassification",
+            "ModernBertModel",
+            "ModernBertForMaskedLM",
+            "ModernBertForSequenceClassification"
+        ],
+        "encoder_decoder": [
+            "T5Model",
+            "T5ForConditionalGeneration",
+            "T5EncoderModel",
+            "BartModel", 
+            "BartForConditionalGeneration",
+            "PegasusModel",
+            "PegasusForConditionalGeneration",
+            "BlenderbotModel",
+            "BlenderbotForConditionalGeneration",
+            "MBartModel",
+            "MBartForConditionalGeneration",
+            "MarianMTModel",
+            "ProphetNetModel",
+            "ProphetNetForConditionalGeneration"
+        ],
+        "decoder_only": [
+            "GPT2Model",
+            "GPT2LMHeadModel",
+            "GPTNeoModel",
+            "GPTNeoForCausalLM",
+            "GPTNeoXModel",
+            "GPTNeoXForCausalLM",
+            "GPTJModel",
+            "GPTJForCausalLM",
+            "LlamaModel",
+            "LlamaForCausalLM",
+            "MistralModel",
+            "MistralForCausalLM",
+            "DeepseekModel", 
+            "DeepseekForCausalLM",
+            "QwenModel",
+            "QwenForCausalLM",
+            "Qwen2Model",
+            "Qwen2ForCausalLM",
+            "CodeGenModel",
+            "CodeGenForCausalLM",
+            "BloomModel",
+            "BloomForCausalLM",
+            "OPTModel",
+            "OPTForCausalLM",
+            "FalconModel",
+            "FalconForCausalLM"
+        ]
+    },
+    "architecture_patterns": {
+        "decoder_only_patterns": [
+            "CausalLM",
+            "LMHead"
+        ],
+        "encoder_decoder_patterns": [
+            "ConditionalGeneration"
+        ]
+    }
+}
