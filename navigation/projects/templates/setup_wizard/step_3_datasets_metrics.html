@@ -1,0 +1,329 @@
+<!-- Step 2: Datasets & Metrics -->
+<div id="step-3" class="wizard-step hidden">
+    <!-- Task Configuration -->
+    <div class="bg-white rounded-lg shadow-xl mb-8 border border-gray-200">
+        <!-- Collapsible Header -->
+        <div class="px-6 py-4 border-b border-gray-200 cursor-pointer" onclick="toggleTaskConfiguration()">
+            <div class="flex items-center gap-2">
+                <button 
+                    type="button"
+                    class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    id="task-configuration-toggle"
+                >
+                    <i class="fa-solid fa-chevron-down text-sm" id="task-configuration-chevron"></i>
+                </button>
+                <h2 class="text-lg font-medium text-gray-700 hover:text-gray-800 transition-colors duration-200">Task Configuration</h2>
+            </div>
+        </div>
+        
+        <!-- Collapsible Content -->
+        <div id="task-configuration-content" class="px-6 py-6 space-y-4">
+            <!-- Task Type Selection -->
+            <div>
+                <label for="task_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    Task Type <span class="text-red-500">*</span>
+                </label>
+                <select 
+                    id="task_type" 
+                    name="task_type"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-200"
+                    onchange="updateTaskParameters()"
+                >
+                    <option value="">Select a task type...</option>
+                    {% for task in availableTasks %}
+                        <option value="{{ task }}">{{ task }}</option>
+                    {% endfor %}
+                    <option value="custom">Custom Task</option>
+                </select>
+                <p class="text-sm text-gray-500 mt-1">Choose the primary NLP task for your project.</p>
+            </div>
+
+            <!-- Dynamic Task Parameters Container -->
+            <div id="task-parameters-container" class="hidden">
+                <h3 class="text-md font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders-h text-primary"></i>
+                    Task Parameters
+                </h3>
+                
+                <!-- Task parameter forms will be dynamically inserted here -->
+                <div id="task-parameters-forms"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datasets & Metrics Selection -->
+    <div class="grid grid-cols-1 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200 relative">
+            <!-- Title -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-700">Available Datasets</h3>
+            </div>
+
+            <!-- Dataset List -->
+            <div class="max-h-[400px] overflow-y-auto divide-y divide-gray-200">
+                {% for dataset_key, dataset in datasets.items %}
+                <!-- Dataset Item {{ forloop.counter }} -->
+                <label class="dataset-item group px-6 py-4 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between cursor-pointer relative">
+                    <!-- Selection Indicator Bar -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 transition-colors duration-200 dataset-selection-bar"></div>
+                    
+                    <!-- Checkbox Input -->
+                    <input id="dataset-checkbox-{{ dataset.name }}" type="checkbox" name="datasets" value="{{ dataset.name }}" data-splits="{{ dataset.splits }}" class="hidden dataset-checkbox" onchange="updateDatasetSelection(this)">
+
+                    <div class="flex items-center">
+                        <i id="dataset-color-{{ dataset.name }}" class="fa-solid fa-database {% cycle 'text-blue-500' 'text-green-500' 'text-purple-500' 'text-orange-500' 'text-pink-500' %} mr-3 ml-2"></i>
+                        <div>
+                            <h4 class="font-medium text-gray-800">{{ dataset.name }}</h4>
+                            <p class="text-sm text-gray-500">{{ dataset.description|default:"No description available" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="https://huggingface.co/datasets/{{ dataset.name }}" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                            title="View on Hugging Face">
+                            <i class="fas fa-external-link-alt text-sm"></i>
+                        </a>
+                        <i id="dataset-info-icon-{{ dataset.name }}"
+                            class="fa-solid fa-circle-info text-gray-400 hover:text-primary cursor-pointer transition-colors duration-200 tooltip-trigger" 
+                            data-tooltip-title="Dataset Information"
+                            data-tooltip-info='[{"label": "Splits", "value": "{{ dataset.splits|default:'Unknown'|escapejs }}"}, {"label": "Samples", "value": "{{ dataset.num_samples|default:'Unknown'|escapejs }}"}, {"label": "Tasks", "value": "{{ dataset.task_types|default:'Unknown'|escapejs }}"}, {"label": "Metrics", "value": "{{ dataset.metrics|default:'Unknown'|escapejs }}"}]'
+                            data-tooltip-metrics='{"metrics": "{{ dataset.metrics|default:'Unknown'|escapejs }}"}'></i>
+                    </div>
+                </label>
+                {% empty %}
+                <!-- No Datasets Message -->
+                <div class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-database text-4xl mb-4 text-gray-300"></i>
+                    <p>No datasets found</p>
+                    <p class="text-sm">Load a custom dataset or check your configuration.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200 relative">
+            <!-- Title -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-700">Available Metrics</h3>
+            </div>
+
+            <!-- Metrics List -->
+            <div class="max-h-[400px] overflow-y-auto" id="metrics-container">
+                <div class="px-6 py-8 text-center text-gray-500" id="no-metrics-message">
+                    <i class="fas fa-chart-line text-4xl mb-4 text-gray-300"></i>
+                    <p>Select a dataset first</p>
+                    <p class="text-sm">Metrics will appear based on your dataset selection.</p>
+                </div>
+                
+                <!-- Dynamic metrics will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Custom Dataset -->
+    <div id="custom-dataset-container" class="bg-white rounded-lg shadow-xl mb-8 border-2 border-dashed border-gray-300">
+        <!-- Custom Dataset Input -->
+        <div class="px-6 py-4">
+            <!-- Collapsible Title -->
+            <div class="flex items-center cursor-pointer" onclick="toggleCustomDataset()">
+                <button 
+                    type="button"
+                    class="text-gray-400 hover:text-gray-600 transition-colors duration-200 mr-3"
+                    id="custom-dataset-toggle"
+                >
+                    <i class="fa-solid fa-chevron-right text-sm" id="custom-dataset-chevron"></i>
+                </button>
+                <h3 class="text-base font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">Load Custom Dataset From HuggingFace</h3>
+            </div>
+
+            <!-- Collapsible Content -->
+            <div id="custom-dataset-content" class="hidden mt-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex-1">
+                        <input 
+                            type="text" 
+                            id="custom_dataset" 
+                            name="custom_dataset"
+                            placeholder="rajpurkar/squad"
+                            class="w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-200"
+                        >
+                    </div>
+                    <div class="">
+                        <button 
+                            id="load-custom-dataset-btn" 
+                            type="button"
+                            class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                            onclick="loadCustomDataset()"
+                        >
+                            <i class="fa-solid fa-plus text-sm"></i>
+                            <span>Add</span>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Enter a valid HuggingFace dataset identifier to load a custom dataset.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dataset-Metric Associations (Hidden field for form submission) -->
+    <input type="hidden" name="metrics" id="dataset-metric-associations" value="">
+
+    <!-- Dataset Parameters Configuration -->
+    <div class="bg-white rounded-lg shadow-xl mb-8 border border-gray-300" id="dataset-parameters-container">
+        <!-- Collapsible Header -->
+        <div class="px-6 py-4 border-b border-gray-200 cursor-pointer" onclick="toggleDatasetParameters()">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200 mr-3"
+                        id="dataset-parameters-toggle"
+                    >
+                        <i class="fa-solid fa-chevron-down text-sm" id="dataset-parameters-chevron"></i>
+                    </button>
+                    <h2 class="text-base font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">Dataset Parameters</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="dataset-parameters-status" class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">Valid JSON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="dataset-parameters-content" class="">
+            <!-- Info Section -->
+            <div class="px-6 py-3 bg-blue-50 border-b border-gray-100">
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-info-circle text-blue-500 mt-0.5"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium">Configure dataset parameters</p>
+                        <p class="text-blue-600">Set the data split, input column, and reference column for each selected dataset. Parameters are automatically converted to JSON format.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dataset Parameters Forms -->
+            <div id="dataset-parameters-forms" class="px-6 py-4">
+                <div id="no-datasets-selected" class="text-center py-8 text-gray-500">
+                    <i class="fa-solid fa-database text-4xl mb-4 text-gray-300"></i>
+                    <p>No datasets selected</p>
+                    <p class="text-sm">Select datasets above to configure their parameters.</p>
+                </div>
+                <!-- Dynamic dataset parameter forms will be inserted here -->
+            </div>
+
+            <!-- JSON Preview -->
+            <div class="px-6 py-4 border-t border-gray-100">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Dataset Parameters (JSON Preview)</label>
+                </div>
+                
+                <textarea 
+                    id="dataset_parameters" 
+                    name="dataset_parameters"
+                    rows="8"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm bg-gray-50 cursor-not-allowed"
+                    placeholder='{"dataset_name": {"split": "train", "input_column": "input", "reference_column": "label", "num_samples": 15}}'
+                    readonly
+                ></textarea>
+                
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>This JSON is automatically generated from the form inputs above and will be used in the final project parameters.</p>
+                </div>
+                
+                <!-- JSON Validation Error Display -->
+                <div id="dataset-parameters-error" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-exclamation-triangle text-red-500 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-medium text-red-800">Parameter Validation Error</p>
+                            <p id="dataset-parameters-error-text" class="text-sm text-red-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Parameters Configuration (JSON Preview) -->
+    <div class="bg-white rounded-lg shadow-xl mb-8 border border-gray-200 hidden" id="task-parameters-json-container">            
+        <!-- Collapsible Header -->
+        <div class="px-6 py-4 border-b border-gray-200 cursor-pointer" onclick="toggleTaskParametersJSON()">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                        id="task-parameters-json-toggle"
+                    >
+                        <i class="fa-solid fa-chevron-right text-sm" id="task-parameters-json-chevron"></i>
+                    </button>
+                    <h2 class="text-lg font-medium text-gray-700">Task Parameters (JSON Preview)</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="task-parameters-status" class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">Valid JSON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="task-parameters-json-content" class="hidden">
+            <!-- Info Section -->
+            <div class="px-6 py-3 bg-blue-50 border-b border-gray-100">
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-info-circle text-blue-500 mt-0.5"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium">Configure task parameters</p>
+                        <p class="text-blue-600">Set the task parameters as needed. Parameters are automatically converted to JSON format.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- JSON Preview -->
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Task Parameters (JSON)</label>
+                    <div class="flex items-center gap-2">
+                        <button 
+                        id="reset-model-parameters-btn"
+                        type="button" 
+                        class="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                        onclick="resetTaskParameters(event)"
+                    >
+                        <i class="fa-solid fa-rotate-left mr-1"></i>
+                        Reset
+                    </button>
+                    </div>
+                </div>
+                
+                <textarea 
+                    id="task_parameters" 
+                    name="task_parameters"
+                    rows="8"
+                    readonly
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm bg-gray-50"
+                    placeholder='{"task_type": "", "task_parameters": {}}'
+                    oninput="validateTaskParametersJSON()"
+                ></textarea>
+                
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>This JSON is automatically generated from the task configuration above and will be used in the final project parameters.</p>
+                </div>
+                
+                <!-- JSON Validation Error Display -->
+                <div id="task-parameters-error" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-exclamation-triangle text-red-500 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-medium text-red-800">Task Parameter Validation Error</p>
+                            <p id="task-parameters-error-text" class="text-sm text-red-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

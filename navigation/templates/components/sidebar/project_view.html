@@ -1,0 +1,408 @@
+<!-- Project View Template -->
+<template id="project-view">
+    <div class="space-y-2">
+        <!-- Project Header -->
+        <div class="space-y-1">
+            <span class="text-sm text-gray-500">Project</span>
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-purple-600">{{ project.name }}</h2>
+                <button class="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition-colors duration-200" 
+                        title="Create new test" 
+                        onclick="openCreateTestModal()">
+                    <i class="fas fa-plus text-sm"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tests Explorer -->
+        <div>
+            {% for group_data in grouped_tests %}
+                {% if group_data.is_group %}
+                    <!-- Group Header -->
+                    <div class="flex items-center py-1 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" onclick="toggleGroup('group-{{ forloop.counter }}')">
+                        <i class="fas fa-chevron-right w-4 h-4 mr-2 text-gray-400 transition-transform duration-200 group-chevron cursor-pointer flex-shrink-0" id="group-chevron-{{ forloop.counter }}" style="transform: rotate(90deg);"></i>
+                        <i class="fas fa-folder mr-2 text-yellow-500 cursor-pointer flex-shrink-0"></i>
+                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900 truncate cursor-pointer hover:text-purple-600 hover:bg-purple-50 rounded px-1 min-w-0 group-name-span" 
+                            data-group-name="{{ group_data.group_name }}" 
+                            data-group-id="group-{{ forloop.counter }}"
+                            onclick="event.stopPropagation();" 
+                            ondblclick="startEditingGroupName(this)"
+                            title="Double-click to edit">{{ group_data.group_name }}</span>
+                    </div>
+                    
+                    <!-- Tests in Group -->
+                    <div class="ml-2 space-y-1 border-l-2 border-gray-300" id="group-{{ forloop.counter }}">
+                        {% for test in group_data.tests %}
+                            <div class="ml-2">
+                                <!-- Test Item -->
+                                <div class="flex items-center py-1 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" data-test-id="{{ test.id }}" id="test-item-{{ test.id }}" onclick="toggleTest('test-{{ test.id }}')">
+                                    <i class="fas fa-chevron-right w-4 h-4 mr-2 text-gray-400 transition-transform duration-200 test-chevron cursor-pointer flex-shrink-0" id="chevron-{{ test.id }}" style="transform: rotate(90deg);"></i>
+                                    <i class="fa-solid fa-flask-vial mr-2 {% cycle 'text-red-500' 'text-blue-500' 'text-green-500' 'text-purple-500' 'text-orange-500' %} cursor-pointer flex-shrink-0"></i>
+                                    <div class="flex items-center min-w-0 flex-1">
+                                        <span class="text-sm text-gray-700 group-hover:text-gray-900 truncate cursor-pointer hover:text-purple-600 min-w-0" 
+                                            onclick="event.stopPropagation(); showDashboardContent('{{ test.name }}', 'test', '{{ test.id }}')">{{ test.name }}</span>
+                                        {% if test.metadata.diagnostic_tag %}
+                                            <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full {% if test.metadata.diagnostic_tag == 'Should-Know' %}bg-blue-100 text-blue-800{% elif test.metadata.diagnostic_tag == 'Really-Know' %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-800{% endif %} flex-shrink-0">
+                                                {{ test.metadata.diagnostic_tag }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Methods (collapsible) -->
+                                <div class="ml-2 space-y-1 border-l-2 border-gray-400" id="test-{{ test.id }}">
+                                    {% for method in test.methods %}
+                                    <div class="flex items-center py-1 pl-6 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" id="method-item-{{ method.id }}" onclick="showDashboardContent('{{ method.name }}', 'method', '{{ method.id }}', '{{ test.id }}')">
+                                        <i class="fas fa-code text-xs mr-2 text-green-500 flex-shrink-0"></i>
+                                        <span class="text-xs text-gray-600 group-hover:text-gray-800 truncate min-w-0" title="{{ method.description }}">{{ method.name }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Ungrouped Tests -->
+                    {% for test in group_data.tests %}
+                        <div>
+                            <!-- Test Item -->
+                            <div class="flex items-center py-1 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" data-test-id="{{ test.id }}" id="test-item-{{ test.id }}" onclick="toggleTest('test-{{ test.id }}')">
+                                <i class="fas fa-chevron-right w-4 h-4 mr-2 text-gray-400 transition-transform duration-200 test-chevron cursor-pointer flex-shrink-0" id="chevron-{{ test.id }}" style="transform: rotate(90deg);"></i>
+                                <i class="fa-solid fa-flask-vial mr-2 {% cycle 'text-red-500' 'text-blue-500' 'text-green-500' 'text-purple-500' 'text-orange-500' %} cursor-pointer flex-shrink-0"></i>
+                                <div class="flex items-center min-w-0 flex-1">
+                                    <span class="text-sm text-gray-700 group-hover:text-gray-900 truncate cursor-pointer hover:text-purple-600 min-w-0" 
+                                        onclick="event.stopPropagation(); showDashboardContent('{{ test.name }}', 'test', '{{ test.id }}')">{{ test.name }}</span>
+                                    {% if test.metadata.diagnostic_tag %}
+                                        <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full {% if test.metadata.diagnostic_tag == 'Should-Know' %}bg-blue-100 text-blue-800{% elif test.metadata.diagnostic_tag == 'Really-Know' %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-800{% endif %} flex-shrink-0">
+                                            {{ test.metadata.diagnostic_tag }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Methods (collapsible) -->
+                            <div class="ml-2 space-y-1 border-l-2 border-gray-400" id="test-{{ test.id }}">
+                                {% for method in test.methods %}
+                                <div class="flex items-center py-1 pl-6 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" id="method-item-{{ method.id }}" onclick="showDashboardContent('{{ method.name }}', 'method', '{{ method.id }}', '{{ test.id }}')">
+                                    <i class="fas fa-code text-xs mr-2 text-green-500 flex-shrink-0"></i>
+                                    <span class="text-xs text-gray-600 group-hover:text-gray-800 truncate min-w-0" title="{{ method.description }}">{{ method.name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </div>
+</template>
+
+{% include "modals/create_test_modal.html" %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('create-test-modal');
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeCreateTestModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeCreateTestModal();
+            }
+        });
+
+        // Form submit handler
+        const form = document.getElementById('create-test-form');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (currentPage === 1 && !isCustomTest) {
+                // Submit diagnostic tests - handled by button click
+                return;
+            } else if (currentPage === 3 && isCustomTest) {
+                // Submit custom test (original behavior)
+                const selectedDatasets = document.querySelectorAll('input[name="datasets"]:checked');
+                if (selectedDatasets.length === 0) {
+                    alert('Please select at least one dataset before creating the test.');
+                    return;
+                }
+                
+                // Allow the form to submit normally for custom tests
+                form.submit();
+            }
+        });
+
+        // Add tooltip handling for test metadata
+        document.addEventListener('mouseenter', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('test-metadata-trigger')) {
+                showTestTooltip(e.target, e);
+            }
+        }, true);
+
+        document.addEventListener('mouseleave', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('test-metadata-trigger')) {
+                hideTestTooltip();
+            }
+        }, true);
+    });
+
+    function toggleTest(testId) {
+        const testElement = document.getElementById(testId);
+        const chevron = document.getElementById('chevron-' + testId.replace('test-', ''));
+        
+        if (testElement.classList.contains('hidden')) {
+            testElement.classList.remove('hidden');
+            chevron.style.transform = 'rotate(90deg)';
+        } else {
+            testElement.classList.add('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function toggleGroup(groupId) {
+        const groupElement = document.getElementById(groupId);
+        const chevron = document.getElementById('group-chevron-' + groupId.replace('group-', ''));
+        
+        if (groupElement.classList.contains('hidden')) {
+            groupElement.classList.remove('hidden');
+            chevron.style.transform = 'rotate(90deg)';
+        } else {
+            groupElement.classList.add('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function startEditingGroupName(spanElement) {
+        // Prevent multiple edits at the same time
+        if (document.querySelector('.group-name-input')) {
+            return;
+        }
+
+        const originalText = spanElement.textContent.trim();
+        const groupName = spanElement.getAttribute('data-group-name');
+        
+        // Create input element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalText;
+        input.className = 'group-name-input text-sm font-medium text-gray-700 bg-white border border-purple-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent min-w-0 max-w-full';
+        input.setAttribute('data-original-name', groupName);
+        input.setAttribute('data-original-text', originalText);
+        
+        // Replace span with input
+        spanElement.style.display = 'none';
+        spanElement.parentNode.insertBefore(input, spanElement.nextSibling);
+        
+        // Focus and select text
+        input.focus();
+        input.select();
+        
+        // Add event listeners
+        input.addEventListener('blur', finishEditingGroupName);
+        input.addEventListener('keydown', handleGroupNameKeydown);
+        
+        // Store reference to original span
+        input.originalSpan = spanElement;
+    }
+
+    function handleGroupNameKeydown(event) {
+        const input = event.target;
+        
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            finishEditingGroupName.call(input);
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            cancelEditingGroupName(input);
+        }
+    }
+
+    function finishEditingGroupName() {
+        const input = this;
+        const newName = input.value.trim();
+        const originalName = input.getAttribute('data-original-name');
+        const originalText = input.getAttribute('data-original-text');
+        const spanElement = input.originalSpan;
+        
+        // If name hasn't changed, just cancel
+        if (newName === originalText || newName === '') {
+            cancelEditingGroupName(input);
+            return;
+        }
+
+        // Validate that the new name is not empty
+        if (newName === '') {
+            showValidationError(input, 'Group name cannot be empty');
+            return;
+        }
+
+        // Check for duplicate group names (case-insensitive)
+        const existingGroupNames = getExistingGroupNames();
+        const currentGroupName = originalName.toLowerCase();
+        
+        if (existingGroupNames.includes(newName.toLowerCase()) && newName.toLowerCase() !== currentGroupName) {
+            showValidationError(input, 'A group with this name already exists');
+            return;
+        }
+        
+        // Show loading state
+        input.disabled = true;
+        input.className = input.className.replace('border-purple-300', 'border-gray-300');
+        
+        // Call API to update group name
+        updateGroupNameAPI(originalName, newName, input, spanElement);
+    }
+
+    function cancelEditingGroupName(input) {
+        const spanElement = input.originalSpan;
+        
+        // Remove input and show original span
+        input.remove();
+        spanElement.style.display = '';
+    }
+
+    function getExistingGroupNames() {
+        // Get all group name spans and extract their current names
+        const groupSpans = document.querySelectorAll('.group-name-span')
+        const groupNames = [];
+        
+        groupSpans.forEach(span => {
+            const groupName = span.getAttribute('data-group-name');
+            if (groupName && groupName.trim()) {
+                groupNames.push(groupName.trim().toLowerCase());
+            }
+        });
+        
+        return groupNames;
+    }
+
+    function showValidationError(input, message) {
+        // Add error styling to input
+        input.className = input.className.replace('border-purple-300', 'border-red-300');
+        input.className = input.className.replace('border-gray-300', 'border-red-300');
+        
+        // Focus and select text for easy correction
+        input.focus();
+        input.select();
+        
+        // Show error notification
+        showNotification(message, 'error');
+    }
+
+    function updateGroupNameAPI(originalName, newName, input, spanElement) {
+        fetch('/api/groups/update-group-name/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                group_name: originalName,
+                new_name: newName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Success: Update the UI
+            spanElement.textContent = newName;
+            spanElement.setAttribute('data-group-name', newName);
+            
+            // Remove input and show updated span
+            input.remove();
+            spanElement.style.display = '';
+            
+            // Show success message (optional)
+            showNotification('Group name updated successfully', 'success');
+        })
+        .catch(error => {
+            console.error('Error updating group name:', error);
+            
+            // Show error and revert to edit mode
+            input.disabled = false;
+            input.className = input.className.replace('border-gray-300', 'border-red-300');
+            input.focus();
+            input.select();
+            
+            // Show error message
+            showNotification('Failed to update group name: ' + error.message, 'error');
+        });
+    }
+
+    function getCsrfToken() {
+        // Try to get from form input first
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            return csrfToken.value;
+        }
+        
+        // Fallback to cookie-based approach
+        return getCookie('csrftoken') || '';
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showNotification(message, type) {
+        // Find the notification container in the topbar
+        const container = document.getElementById('notification-container');
+        if (!container) {
+            console.warn('Notification container not found in topbar');
+            return;
+        }
+
+        // Create notification element with topbar-appropriate styling
+        const notification = document.createElement('div');
+        const baseClasses = 'flex items-center px-3 py-1 rounded-md text-sm font-medium transition-all duration-300 transform scale-95 opacity-0';
+        const typeClasses = type === 'success' 
+            ? 'bg-green-100 text-green-700 border border-green-200' 
+            : 'bg-red-100 text-red-700 border border-red-200';
+        
+        notification.className = `${baseClasses} ${typeClasses}`;
+        
+        // Add icon and message
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        notification.innerHTML = `
+            <i class="fas ${icon} mr-2"></i>
+            <span>${message}</span>
+        `;
+        
+        // Add to container
+        container.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('scale-95', 'opacity-0');
+            notification.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+</script>

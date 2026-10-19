@@ -1,0 +1,344 @@
+<!-- Settings Modal Component -->
+<div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[80vh] flex overflow-hidden">
+        <!-- Settings Navigation Sidebar -->
+        <div class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Settings</h2>
+            </div>
+            
+            <!-- Navigation Menu -->
+            <div class="flex-1 overflow-y-auto p-2">
+                <div class="space-y-1">
+                    <!-- General Section -->
+                    <button class="settings-nav-item active w-full text-left px-3 py-2 rounded hover:bg-gray-200 transition-colors flex items-center" data-section="environment">
+                        <i class="fas fa-cog mr-3 text-gray-600"></i>
+                        <span>Environment</span>
+                    </button>
+                    <button class="settings-nav-item w-full text-left px-3 py-2 rounded hover:bg-gray-200 transition-colors flex items-center" data-section="about">
+                        <i class="fas fa-info-circle mr-3 text-gray-600"></i>
+                        <span>About</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header with Close Button -->
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                    <h3 id="settings-title" class="text-xl font-semibold text-gray-800">Environment</h3>
+                    <p id="settings-description" class="text-sm text-gray-500 mt-1">Manage your environment preferences</p>
+                </div>
+                <button id="close-settings" class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Settings Content Area -->
+            <div class="flex-1 overflow-y-auto p-6">
+                
+                <!-- Environment Settings -->
+                <div id="environment-settings" class="settings-section">
+                    <div class="space-y-6">
+                        <!-- Environment Info -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <div class="mb-4">
+                                <h4 class="text-xl font-semibold text-gray-800 mb-2">Environment Information</h4>
+                                <p class="text-gray-600">Current environment configuration and variables</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- HF_HOME -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h5 class="font-medium text-gray-800 flex items-center">
+                                                <i class="fas fa-folder mr-2 text-primary"></i>
+                                                HuggingFace Cache Directory
+                                            </h5>
+                                            <p class="text-sm text-gray-600 mt-1">Location where HuggingFace models are cached</p>
+                                            <code class="text-xs bg-gray-100 px-2 py-1 rounded mt-2 block break-all">{{hf_home}}</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Logging Level -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h5 class="font-medium text-gray-800 flex items-center">
+                                                <i class="fas fa-bug mr-2 text-primary"></i>
+                                                Logging Level
+                                            </h5>
+                                            <p class="text-sm text-gray-600 mt-1">Current application logging verbosity</p>
+                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full mt-2 
+                                                {% if logging_level == 'DEBUG' %}bg-blue-100 text-blue-800
+                                                {% elif logging_level == 'INFO' %}bg-green-100 text-green-800
+                                                {% elif logging_level == 'WARNING' %}bg-yellow-100 text-yellow-800
+                                                {% elif logging_level == 'ERROR' %}bg-red-100 text-red-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{logging_level}}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Debug Mode -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h5 class="font-medium text-gray-800 flex items-center">
+                                                <i class="fas fa-code mr-2 text-primary"></i>
+                                                Debug Mode
+                                            </h5>
+                                            <p class="text-sm text-gray-600 mt-1">Django debug mode status</p>
+                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full mt-2 
+                                                {% if django_debug == 'True' %}bg-red-100 text-red-800
+                                                {% else %}bg-green-100 text-green-800{% endif %}">
+                                                {% if django_debug == 'True' %}Enabled{% else %}Disabled{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Report Directory -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h5 class="font-medium text-gray-800 flex items-center">
+                                                <i class="fas fa-chart-line mr-2 text-primary"></i>
+                                                Report Directory
+                                            </h5>
+                                            <p class="text-sm text-gray-600 mt-1">Directory where analysis reports are stored</p>
+                                            <code class="text-xs bg-gray-100 px-2 py-1 rounded mt-2 block break-all">{{report_dir}}</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- System Resources -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <div class="mb-4">
+                                <h4 class="text-xl font-semibold text-gray-800 mb-2">System Resources</h4>
+                                <p class="text-gray-600">Information about available system resources</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Container Status -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-center">
+                                    <div class="flex items-center justify-center mb-2">
+                                        <i class="fas fa-docker text-2xl text-blue-600"></i>
+                                    </div>
+                                    <h5 class="font-medium text-gray-800">Container</h5>
+                                    <p class="text-sm text-gray-600 mt-1">Running in Docker</p>
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full mt-2 bg-green-100 text-green-800">
+                                        Active
+                                    </span>
+                                </div>
+
+                                <!-- Processing Service -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-center">
+                                    <div class="flex items-center justify-center mb-2">
+                                        <i class="fas fa-server text-2xl text-primary"></i>
+                                    </div>
+                                    <h5 class="font-medium text-gray-800">Processing Service</h5>
+                                    <p class="text-sm text-gray-600 mt-1">Backend processing service endpoint</p>
+                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded mt-2 block break-all">{{processing_service_ip}}</code>
+                                </div>
+                                
+                                <!-- Port -->
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-center">
+                                    <div class="flex items-center justify-center mb-2">
+                                        <i class="fas fa-plug text-2xl text-purple-600"></i>
+                                    </div>
+                                    <h5 class="font-medium text-gray-800">Port</h5>
+                                    <p class="text-sm text-gray-600 mt-1">HTTP Service</p>
+                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded mt-2 block">8000</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div id="about-settings" class="settings-section hidden">
+                    <div class="space-y-6">
+                        <!-- App Info -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6 text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-robot text-primary text-5xl mb-4"></i>
+                                <h4 class="text-2xl font-bold text-gray-800">MIRA</h4>
+                                <p class="text-gray-600">Large Language Model Diagnosis Toolkit</p>
+                            </div>
+                            <div class="space-y-2 text-sm text-gray-600">
+                                <p><strong>Version:</strong> {{app_version}}</p>
+                                <p><strong>Build:</strong> {{build_date}}</p>
+                                <p><strong>License:</strong> {{license}}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Links -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-800 mb-3">Resources</h4>
+                            <div class="space-y-2">
+                                <a href="#" class="flex items-center text-primary hover:text-primary/80 transition-colors">
+                                    <i class="fas fa-book mr-3"></i>
+                                    <span>Documentation</span>
+                                </a>
+                                <a href="https://github.com/delftcrowd/llm_diagnosis_toolkit/issues" class="flex items-center text-primary hover:text-primary/80 transition-colors">
+                                    <i class="fas fa-bug mr-3"></i>
+                                    <span>Report a Bug</span>
+                                </a>
+                                <a href="https://github.com/delftcrowd/llm_diagnosis_toolkit" class="flex items-center text-primary hover:text-primary/80 transition-colors">
+                                    <i class="fab fa-github mr-3"></i>
+                                    <span>GitHub Repository</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer with Save/Cancel -->
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                {% comment %} <button id="cancel-settings" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button id="save-settings" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+                    Save Changes
+                </button> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsBtn = document.getElementById('close-settings');
+        // const cancelSettingsBtn = document.getElementById('cancel-settings');
+        // const saveSettingsBtn = document.getElementById('save-settings');
+        const settingsNavItems = document.querySelectorAll('.settings-nav-item');
+        const settingsSections = document.querySelectorAll('.settings-section');
+        const settingsTitle = document.getElementById('settings-title');
+        const settingsDescription = document.getElementById('settings-description');
+        
+        // Section configuration
+        const sectionConfig = {
+            'environment': {
+                title: 'Environment',
+                description: 'View environment configuration and system resources'
+            },
+            'about': {
+                title: 'About',
+                description: 'Information about MIRA'
+            }
+        };
+        
+        // Get sidebar settings button
+        const sidebarSettingsBtn = document.querySelector('button[data-section="settings"]');
+        
+        // Open settings modal
+        function openSettings() {
+            settingsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Set sidebar button active state
+            if (sidebarSettingsBtn) {
+                // Clear all other main sidebar button states first (exclude settings modal nav items)
+                const allSidebarBtns = document.querySelectorAll('button[data-section]:not(.settings-nav-item)');
+                allSidebarBtns.forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('text-gray-600');
+                });
+                
+                // Activate settings button
+                sidebarSettingsBtn.classList.add('bg-primary', 'text-white');
+                sidebarSettingsBtn.classList.remove('text-gray-600');
+            }
+        }
+        
+        // Close settings modal
+        function closeSettings() {
+            settingsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            
+            // Reset sidebar button state
+            if (sidebarSettingsBtn) {
+                sidebarSettingsBtn.classList.remove('bg-primary', 'text-white');
+                sidebarSettingsBtn.classList.add('text-gray-600');
+            }
+        }
+        
+        // Switch settings section
+        function switchSection(sectionName) {
+            // Update navigation active state
+            settingsNavItems.forEach(item => {
+                if (item.dataset.section === sectionName) {
+                    item.classList.add('active', 'bg-primary/10', 'text-primary');
+                    item.classList.remove('text-gray-700');
+                } else {
+                    item.classList.remove('active', 'bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-700');
+                }
+            });
+            
+            // Hide all sections
+            settingsSections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById(sectionName + '-settings');
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+            
+            // Update header
+            const config = sectionConfig[sectionName];
+            if (config) {
+                settingsTitle.textContent = config.title;
+                settingsDescription.textContent = config.description;
+            }
+        }
+        
+        // Event listeners
+        closeSettingsBtn.addEventListener('click', closeSettings);
+        // cancelSettingsBtn.addEventListener('click', closeSettings);
+        
+        // Click outside modal to close
+        settingsModal.addEventListener('click', function(e) {
+            if (e.target === settingsModal) {
+                closeSettings();
+            }
+        });
+        
+        // ESC key to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !settingsModal.classList.contains('hidden')) {
+                closeSettings();
+            }
+        });
+        
+        // Navigation click handlers
+        settingsNavItems.forEach(item => {
+            item.addEventListener('click', function() {
+                switchSection(this.dataset.section);
+            });
+        });
+        
+        // Save settings handler
+        // saveSettingsBtn.addEventListener('click', function() {
+        //     closeSettings();
+        // });
+        
+        // Global function to open settings (can be called from anywhere)
+        window.openSettingsModal = openSettings;
+        
+        // Initialize first section
+        switchSection('environment');
+    });
+</script>

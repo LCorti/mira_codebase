@@ -1,0 +1,487 @@
+{% load comparison_tags %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report_name }} - {{ project.name }} - MIRA</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #8b5cf6;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #8b5cf6;
+            margin: 0;
+            font-size: 28px;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        
+        .header .meta {
+            color: #888;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            break-inside: avoid;
+        }
+        
+        .section-header {
+            background-color: #f8f9fa;
+            padding: 12px 16px;
+            border-left: 4px solid #8b5cf6;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8b5cf6;
+        }
+        
+        .summary-card .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background-color: #f0f9ff;
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .test-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .test-icon {
+            margin-right: 8px;
+            color: #10b981;
+        }
+        
+        .method-section {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .method-header {
+            background-color: #faf5ff;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .method-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .method-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .job-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px;
+            background-color: #f9fafb;
+        }
+        
+        .job-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .job-id {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .job-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-failed {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-running {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .job-details {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+        
+        .metrics-table th,
+        .metrics-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .metrics-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        
+        .sample-output {
+            margin: 15px 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            background-color: #f9fafb;
+        }
+        
+        .sample-header {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+        
+        .input-output {
+            margin-bottom: 10px;
+        }
+        
+        .label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .content {
+            font-size: 12px;
+            background-color: white;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .outputs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .toc {
+            margin-bottom: 30px;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc ul ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+        
+        .toc a {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            break-inside: avoid;
+        }
+        
+        @page {
+            margin: 0.75in;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>{{ report_name }}</h1>
+        <div class="subtitle">{{ project.name }} Project Report</div>
+        <div class="meta">Generated on {{ generated_at|date:"F d, Y \a\t H:i" }}</div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="section">
+        <div class="section-header">Executive Summary</div>
+        {% if report_description %}
+            <p>{{ report_description }}</p>
+        {% endif %}
+        
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="value">{{ total_tests }}</div>
+                <div class="label">Test{{ total_tests|pluralize }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">{{ total_methods }}</div>
+                <div class="label">Method{{ total_methods|pluralize }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">{{ total_jobs }}</div>
+                <div class="label">Job{{ total_jobs|pluralize }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">{{ organized_data|length }}</div>
+                <div class="label">Section{{ organized_data|length|pluralize }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="section toc">
+        <div class="section-header">Table of Contents</div>
+        <ul>
+            {% for test in organized_data %}
+                <li>
+                    <a href="#test-{{ test.id }}">{{ forloop.counter }}. {{ test.name }}</a>
+                    {% if test.methods %}
+                        <ul>
+                            {% for method in test.methods %}
+                                <li>
+                                    <a href="#method-{{ method.id }}">{{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ method.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Test Sections -->
+    {% for test in organized_data %}
+        <div class="page-break"></div>
+        <div id="test-{{ test.id }}" class="test-section">
+            <!-- Test Header -->
+            <div class="test-header">
+                <h2 class="test-title">
+                    <span class="test-icon">🧪</span>
+                    {{ forloop.counter }}. {{ test.name }}
+                </h2>
+                {% if test.description %}
+                    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">{{ test.description }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Methods within Test -->
+            {% for method in test.methods %}
+                <div id="method-{{ method.id }}" class="method-section">
+                    <!-- Method Header -->
+                    <div class="method-header">
+                        <h3 class="method-title">
+                            {{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ method.name }}
+                        </h3>
+                        {% if method.description %}
+                            <p class="method-meta">{{ method.description }}</p>
+                        {% endif %}
+                        <div class="method-meta">
+                            {% if method.dataset %}<strong>Dataset:</strong> {{ method.dataset }} | {% endif %}
+                            <strong>Jobs:</strong> {{ method.jobs|length }}
+                        </div>
+                    </div>
+
+                    <!-- Jobs Content -->
+                    {% if method.jobs %}
+                        <div style="padding: 16px;">
+                            <!-- Job Overview -->
+                            <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">Job Overview</h4>
+                            <div class="jobs-grid">
+                                {% for job in method.jobs %}
+                                    <div class="job-card">
+                                        <div class="job-header">
+                                            <span class="job-id">Job #{{ job.id|slice:":8" }}</span>
+                                            <span class="job-status status-{{ job.status|lower }}">{{ job.status }}</span>
+                                        </div>
+                                        <div class="job-details">
+                                            {% if job.created_at %}
+                                                <div>Created: {{ job.created_at|date:"M d, H:i" }}</div>
+                                            {% endif %}
+                                            {% if job.runtime %}
+                                                <div>Runtime: {{ job.runtime }}s</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Metrics Comparison -->
+                            {% if "metrics" in include_options and method.jobs.0.result.metrics %}
+                                <h4 style="margin: 20px 0 10px 0; font-size: 14px; font-weight: 600;">Performance Metrics</h4>
+                                <table class="metrics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            {% for job in method.jobs %}
+                                                <th>Job #{{ job.id|slice:":8" }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for metric, value in method.jobs.0.result.metrics.items %}
+                                            <tr>
+                                                <td style="font-weight: 600;">{{ metric }}</td>
+                                                {% for job in method.jobs %}
+                                                    <td>
+                                                        {% if job.result.metrics %}{{ job.result.metrics|get_item:metric|floatformat:4 }}{% else %}-{% endif %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% endif %}
+
+                            <!-- Sample Outputs -->
+                            {% if "samples" in include_options and method.jobs.0.result.results %}
+                                <h4 style="margin: 20px 0 10px 0; font-size: 14px; font-weight: 600;">Sample Outputs</h4>
+                                {% for i in "0123456789" %}
+                                    {% if forloop.counter0 < max_samples and method.jobs.0.result.results|length > forloop.counter0 %}
+                                        {% with sample_idx=forloop.counter0 %}
+                                            <div class="sample-output no-break">
+                                                <div class="sample-header">Sample {{ forloop.counter }}</div>
+                                                
+                                                <!-- Input -->
+                                                <div class="input-output">
+                                                    <div class="label">Input:</div>
+                                                    <div class="content">
+                                                        {{ method.jobs.0.result.results|get_item:sample_idx|get_item:"input"|truncatechars:200 }}
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Outputs -->
+                                                <div class="outputs-grid">
+                                                    {% for job in method.jobs %}
+                                                        {% if job.result.results|length > sample_idx %}
+                                                            <div class="input-output">
+                                                                <div class="label">Job #{{ job.id|slice:":8" }} Output:</div>
+                                                                <div class="content">
+                                                                    {{ job.result.results|get_item:sample_idx|get_item:"output"|truncatechars:150 }}
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                
+                                                <!-- Reference -->
+                                                {% if method.jobs.0.result.results|get_item:sample_idx|get_item:"reference" %}
+                                                    <div class="input-output">
+                                                        <div class="label">Reference:</div>
+                                                        <div class="content">
+                                                            {{ method.jobs.0.result.results|get_item:sample_idx|get_item:"reference"|truncatechars:150 }}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Generated by MIRA Diagnosis Toolkit on {{ generated_at|date:"F d, Y \a\t H:i" }}</p>
+        <p>Report includes {{ total_tests }} test{{ total_tests|pluralize }}, {{ total_methods }} method{{ total_methods|pluralize }}, and {{ total_jobs }} job{{ total_jobs|pluralize }}</p>
+    </div>
+</body>
+</html>

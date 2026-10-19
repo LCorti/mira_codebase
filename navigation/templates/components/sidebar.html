@@ -1,0 +1,46 @@
+<!-- Sidebar Component -->
+<div class="w-16 bg-white flex flex-col items-center py-4 border-r border-gray-200">    
+    <div class="flex flex-col items-center space-y-6 flex-grow">
+        <div class="tooltip-container">
+            <button id="project-btn" class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors" 
+                    data-section="project">  
+                <i class="fas fa-diagram-project text-lg"></i>
+            </button>
+            <div class="tooltip tooltip-right">Project</div>
+        </div>
+        
+        <div class="tooltip-container">
+            <button id="search-btn" class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors"
+                    data-section="search">
+                <i class="fas fa-search text-lg"></i>
+            </button>
+            <div class="tooltip tooltip-right">Search</div>
+        </div>
+        
+        {% comment %} <div class="tooltip-container">
+            <button id="diagnosis-btn" class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors"
+                    data-section="diagnosis">
+                <i class="fas fa-bug text-lg"></i>
+            </button>
+            <div class="tooltip tooltip-right">Diagnosis</div>
+        </div> {% endcomment %}
+        
+        <div class="tooltip-container">
+            <button id="reports-btn" class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors"
+                    data-section="reports">
+                <i class="fas fa-chart-line text-lg"></i>
+            </button>
+            <div class="tooltip tooltip-right">Reports</div>
+        </div>
+    </div>
+    
+    <!-- Bottom Icons -->
+    <div class="flex flex-col items-center space-y-6">
+        <div class="tooltip-container">
+            <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors" onclick="event.stopPropagation(); openSettingsModal();">
+                <i class="fas fa-cog text-lg"></i>
+            </button>
+            <div class="tooltip tooltip-right">Settings</div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1981 @@
+{% extends "head.html" %}
+{% load static %}
+
+{% block title %}Configure method - {{ method.name }} - MIRA{% endblock %}
+
+{% block body %}
+<div class="flex flex-col h-screen">
+    <!-- Header Section -->
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <!-- Robot Icon -->
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-robot text-primary text-2xl"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1 class="text-xl font-semibold text-gray-900">
+                            Configure {{method.test.name}} - {{ method.name }}
+                        </h1>
+                        <p class="text-sm text-gray-500">
+                            Project: {{ project.name }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'projects_show_method' project.id 'project' method.id %}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-1 overflow-hidden">
+        <div class="flex-1 overflow-auto p-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="max-w-4xl mx-auto px-6 py-8">
+                    <!-- Header Section -->
+                    <div class="mb-8">                
+                        <!-- Title and Actions -->
+                        <div class="flex items-center justify-between gap-8">
+                            <div class="flex-1 min-w-0">
+                                <h1 class="text-3xl font-bold text-gray-800">Configure {{ method.name }}</h1>
+                                <p class="text-gray-600 mt-2">Configure the settings for this method</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Form -->
+                    <form method="post" id="method-config-form" class="space-y-8">
+                        {% csrf_token %}
+                        
+                        <!-- Hidden field for JSON parameters -->
+                        <input type="hidden" id="parameters-hidden" name="parameters" value="">
+                        
+                        <!-- Basic Information -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                    <i class="fas fa-info-circle mr-3 text-blue-500"></i>
+                                    Basic Information
+                                </h2>
+                            </div>
+                            <div class="p-6 space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Method Name -->
+                                    <div>
+                                        <label for="method_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Method Name <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" 
+                                            id="method_name" 
+                                            name="name" 
+                                            value="{{ method.name|default:'' }}"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            required>
+                                    </div>
+                                    
+                                    <!-- Dataset -->
+                                    <div>
+                                        <label for="dataset" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Dataset <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            <input type="text"
+                                                id="dataset" 
+                                                name="dataset" 
+                                                value="{{ method.dataset|default:'' }}"
+                                                class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+                                                disabled>
+                                            {% if method.dataset %}
+                                            <a href="https://huggingface.co/datasets/{{ method.dataset }}" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                                                title="View on Hugging Face">
+                                                <i class="fas fa-external-link-alt text-sm"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Description -->
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Description
+                                    </label>
+                                    <textarea id="description" 
+                                            name="description" 
+                                            rows="3"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            placeholder="Enter a description for this method...">{{ method.description|default:'' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dataset Configuration -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                    <i class="fas fa-database mr-3 text-green-500"></i>
+                                    Dataset Configuration
+                                </h2>
+                            </div>
+                            <div class="p-6 space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Dataset Split -->
+                                    <div>
+                                        <label for="dataset_split" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Dataset Split
+                                        </label>
+                                        <select id="dataset_split" 
+                                                name="dataset_split"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            {% for split in dataset_content.splits %}
+                                                <option value="{{ split }}" {% if method.parameters.dataset.split == split %}selected{% endif %}>{{ split }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <p class="mt-1 text-xs text-gray-500">Which split of the dataset to use</p>
+                                    </div>
+
+                                    <!-- Query ID Column (for text-retrieval) -->
+                                    {% if method.get_task_type == 'text-retrieval' %}
+                                    <div>
+                                        <label for="query_id_column" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Query ID Column
+                                        </label>
+                                        <div class="relative">
+                                            <input type="text" 
+                                                id="query_id_column" 
+                                                name="query_id_column"
+                                                placeholder="query_id"
+                                                value="{{ method.parameters.dataset.query_id_column|default:'' }}"
+                                                class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500">Column containing query identifiers</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Input Column -->
+                                    <div>
+                                        <label for="input_column" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Input Column
+                                        </label>
+                                        <div class="relative">
+                                            <input type="text" 
+                                                id="input_column" 
+                                                name="input_column" 
+                                                value="{{ method.parameters.dataset.input_column }}"
+                                                class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500">Column containing input data</p>
+                                    </div>
+                                    
+                                    <!-- Reference Column (for summarization/text-simplification) -->
+                                    {% if method.get_task_type == 'summarization' or method.get_task_type == 'text-simplification' %}
+                                    <div>
+                                        <label for="reference_column" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Reference Column
+                                        </label>
+                                        <div class="relative">
+                                            <input type="text" 
+                                                id="reference_column" 
+                                                name="reference_column" 
+                                                value="{{ method.parameters.dataset.reference_column }}"
+                                                class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500">Column containing reference/target data</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Num. Samples -->
+                                    <div>
+                                        <label for="num_samples" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Num. Samples
+                                        </label>
+                                        <input type="number" 
+                                            id="num_samples" 
+                                            name="num_samples" 
+                                            value="{{ method.parameters.dataset.num_samples|default:'' }}"
+                                            min="1"
+                                            placeholder="10"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <p class="mt-1 text-xs text-gray-500">Max samples to use (leave empty for all)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Configuration -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                    <i class="fas fa-chart-line mr-3 text-purple-500"></i>
+                                    Metrics Configuration
+                                </h2>
+                            </div>
+                            <div class="p-6 space-y-6">
+                                <!-- Selected Metrics Display -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        Selected Metrics
+                                    </label>
+                                    <div id="selected-metrics-display" class="min-h-[2.5rem] p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                                        <div id="selected-metrics-list" class="flex flex-wrap gap-2">
+                                            <!-- Selected metrics will be displayed here -->
+                                        </div>
+                                        <div id="no-metrics-selected" class="text-gray-500 text-sm text-center">
+                                            No metrics selected. Click on metrics below to add them.
+                                        </div>
+                                    </div>
+                                    <!-- Hidden input for form submission -->
+                                    <input type="hidden" 
+                                        id="metrics_list" 
+                                        name="metrics_list" 
+                                        value="{% if method.metrics %}{{ method.metrics|join:', ' }}{% endif %}">
+                                </div>
+                                
+                                <!-- Available Metrics -->
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-700 mb-3">Available Metrics</h3>
+                                    <div class="h-80 max-h-[400px] overflow-y-auto divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                                        {% for metric_name, metric in dataset_metrics.items %}
+                                        <!-- Metric Item -->
+                                        <label class="metric-item group px-6 py-4 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between cursor-pointer relative">
+                                            <!-- Selection Indicator Bar -->
+                                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 transition-colors duration-200 metric-selection-bar" id="metric-bar-{{ metric.name }}"></div>
+                                            
+                                            <!-- Checkbox Input -->
+                                            <input id="metric-checkbox-{{ metric.name }}" 
+                                                type="checkbox" 
+                                                value="{{ metric.name }}" 
+                                                class="hidden metric-checkbox" 
+                                                onchange="updateMetricSelection(this)">
+
+                                            <div class="flex items-center">
+                                                <i class="fa-solid fa-chart-line {% cycle 'text-blue-500' 'text-green-500' 'text-purple-500' 'text-orange-500' 'text-pink-500' %} mr-3 ml-2"></i>
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">{{ metric_name }}</h4>
+                                                    <p class="text-sm text-gray-500">{{ metric.description|truncatechars:80 }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-4">
+                                                <a href="{{ metric.paper_ref }}" 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    class="text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                                                    title="View Metric Documentation">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                                <i class="fa-solid fa-circle-info text-gray-400 hover:text-primary cursor-pointer transition-colors duration-200 tooltip-trigger" 
+                                                    data-tooltip-title="Metric Information"
+                                                    data-tooltip-info='[{"label": "Description", "value": "{{ metric.description|escapejs }}"}, {"label": "Formula", "value": "{{ metric.formula|escapejs }}"}, {"label": "Range", "value": "{{ metric.range|escapejs }}"}, {"label": "Input Types", "value": "{{ metric.input_types|escapejs }}"}, {"label": "Task Types", "value": "{{ metric.task_types|escapejs }}"}, {"label": "Output Format", "value": "{{ metric.output_format|escapejs }}"}, {"label": "Output Metrics", "value": "{{ metric.output_metrics|escapejs }}"}]'></i>
+                                            </div>
+                                        </label>
+                                        {% empty %}
+                                        <!-- No Metrics Message -->
+                                        <div class="px-6 py-8 text-center text-gray-500">
+                                            <i class="fas fa-chart-line text-4xl mb-4 text-gray-300"></i>
+                                            <p>No metrics available</p>
+                                            <p class="text-sm">Check your dataset configuration.</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Parameters -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                    <i class="fas fa-cogs mr-3 text-red-500"></i>
+                                    Task Parameters: {{ method.get_task_type }}
+                                </h2>
+                            </div>
+                            <div class="space-y-4 p-4">
+                                {% if method.get_task_type == "text-retrieval" %}
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Sparse Retrieval (k_sparse)</label>
+                                            <input type="number" id="rag_k_sparse" name="rag_k_sparse" 
+                                                value="{{ method.parameters.task_parameters.k_sparse|default:'10' }}" step="1" min="1" max="50"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <p class="text-xs text-gray-500 mt-1">Number of documents for sparse retrieval (1-50)</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Dense Retrieval (k_dense)</label>
+                                            <input type="number" id="rag_k_dense" name="rag_k_dense" 
+                                                value="{{ method.parameters.task_parameters.k_dense|default:'10' }}" step="1" min="1" max="50"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <p class="text-xs text-gray-500 mt-1">Number of documents for dense retrieval (1-50)</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Stopword Language</label>
+                                            <select id="rag_stopword_language" name="rag_stopword_language" 
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <option value="english">English</option>
+                                                <!-- Add more language options as needed -->
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1">Language for stopword removal</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Stemming Language</label>
+                                            <select id="rag_stemming_language" name="rag_stemming_language" 
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <option value="english">English</option>
+                                                <!-- Add more language options as needed -->
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1">Language for word stemming</p>
+                                        </div>
+                                        
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Corpus Dataset Name</label>
+                                            <div class="flex gap-2">
+                                                <div class="relative flex-1">
+                                                    <input type="text" id="rag_corpus_name" name="rag_corpus_name" 
+                                                        value="{{ method.parameters.task_parameters.corpus_name }}"
+                                                        placeholder="rajpurkar/squad"
+                                                        class="w-full pr-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                    <a href="#" id="rag_corpus_link" 
+                                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors duration-200 hidden"
+                                                        target="_blank" rel="noopener noreferrer" title="View on Hugging Face">
+                                                        <i class="fas fa-external-link-alt text-sm"></i>
+                                                    </a>
+                                                </div>
+                                                <button type="button" 
+                                                        onclick="validateRAGCorpus()" 
+                                                        class="px-3 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors duration-200 text-sm">
+                                                    <i class="fa-solid fa-check mr-1"></i>
+                                                    Validate
+                                                </button>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">HuggingFace dataset name for the RAG corpus.</p>
+                                            <div id="rag-corpus-prefill-error" class="hidden mt-1 text-xs text-orange-600">
+                                                <i class="fa-solid fa-exclamation-triangle mr-1"></i>
+                                                Pre-filled dataset may not be valid. Click Validate to verify.
+                                            </div>
+                                            <div id="rag-corpus-validation" class="hidden mt-2"></div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Corpus Split</label>
+                                            <select id="rag_corpus_split" name="rag_corpus_split" 
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <option value="{{method.parameters.task_parameters.corpus_split|default:'train'}}">{{method.parameters.task_parameters.corpus_split|default:'train'}}</option>
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1">Dataset split to use for corpus</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Corpus ID Column</label>
+                                            <input type="text" id="rag_corpus_id_column" name="rag_corpus_id_column" 
+                                                value="{{ method.parameters.task_parameters.corpus_id_column }}" 
+                                                placeholder="Column name for document IDs"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <p class="text-xs text-gray-500 mt-1">Column containing document identifiers</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Corpus Text Column</label>
+                                            <input type="text" id="rag_corpus_text_column" name="rag_corpus_text_column" 
+                                                value="{{ method.parameters.task_parameters.corpus_text_column }}" 
+                                                placeholder="Column name for document text"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <p class="text-xs text-gray-500 mt-1">Column containing the document text content</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Metric Cutoff</label>
+                                            <input type="number" id="rag_metric_cutoff" name="rag_metric_cutoff" 
+                                                value="0.8" step="0.05" min="0.0" max="1.0"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <p class="text-xs text-gray-500 mt-1">Relevancy threshold for metrics such as F1, accuracy (0.0 - 1.0)</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Qrels Configuration -->
+                                    <div class="mt-4 pt-4 border-t border-gray-300">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="md:col-span-2">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Qrels Dataset Name</label>
+                                                <div class="flex gap-2">
+                                                    <div class="relative flex-1">
+                                                        <input type="text" id="rag_qrels_name" name="rag_qrels_name" 
+                                                            value="{{ method.parameters.task_parameters.qrels_name }}" 
+                                                            placeholder="beir/trec-covid-qrels"
+                                                            class="w-full pr-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                        <a href="#" id="rag_qrels_link" 
+                                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors duration-200 hidden"
+                                                            target="_blank" rel="noopener noreferrer" title="View on Hugging Face">
+                                                            <i class="fas fa-external-link-alt text-sm"></i>
+                                                        </a>
+                                                    </div>
+                                                    <button type="button" 
+                                                            onclick="validateRAGQrels()" 
+                                                            class="px-3 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors duration-200 text-sm">
+                                                        <i class="fa-solid fa-check mr-1"></i>
+                                                        Validate
+                                                    </button>
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-1">HuggingFace dataset name for relevance judgments.</p>
+                                                <div id="rag-qrels-prefill-error" class="hidden mt-1 text-xs text-orange-600">
+                                                    <i class="fa-solid fa-exclamation-triangle mr-1"></i>
+                                                    Pre-filled dataset may not be valid. Click Validate to verify.
+                                                </div>
+                                                <div id="rag-qrels-validation" class="hidden mt-2"></div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Qrels Split</label>
+                                                <select id="rag_qrels_split" name="rag_qrels_split" 
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                    <option value="{{ method.parameters.task_parameters.qrels_split|default:'train' }}">{{ method.parameters.task_parameters.qrels_split|default:'train' }}</option>
+                                                </select>
+                                                <p class="text-xs text-gray-500 mt-1">Dataset split to use for qrels</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Qrels Query ID Column</label>
+                                                <input type="text" id="rag_qrels_query_id_column" name="rag_qrels_query_id_column" 
+                                                    value="{{ method.parameters.task_parameters.qrels_query_id_column }}" 
+                                                    placeholder="query-id"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <p class="text-xs text-gray-500 mt-1">Column containing query IDs</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Qrels Corpus ID Column</label>
+                                                <input type="text" id="rag_qrels_corpus_id_column" name="rag_qrels_corpus_id_column" 
+                                                    value="{{ method.parameters.task_parameters.qrels_corpus_id_column }}" 
+                                                    placeholder="corpus-id"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <p class="text-xs text-gray-500 mt-1">Column containing corpus document IDs</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Qrels Score Column</label>
+                                                <input type="text" id="rag_qrels_score_column" name="rag_qrels_score_column" 
+                                                    value="{{ method.parameters.task_parameters.qrels_score_column }}" 
+                                                    placeholder="score"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                <p class="text-xs text-gray-500 mt-1">Column containing relevance scores</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% elif method.get_task_type == 'text-simplification' %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">System Message</label>
+                                        <textarea id="simp_system_message" name="simp_system_message" 
+                                            rows="4"
+                                            placeholder="Briefly simplify the following paper.\nPaper: <input>\nBrief simplification:"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-vertical">{{ method.parameters.task_parameters.system_message|default:'' }}</textarea>
+                                        <p class="text-xs text-gray-500 mt-1">System message that will be passed to the model before the text to be simplified. Use '<input>' to indicate where the input text will be inserted.</p>
+                                    </div>
+                                {% elif method.get_task_type == 'summarization' %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">System Message</label>
+                                        <textarea id="sum_system_message" name="sum_system_message" 
+                                            rows="4"
+                                            placeholder="Briefly summarise the following paper.\nPaper: <input>\nBrief summary:"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-vertical">{{ method.parameters.task_parameters.system_message|default:'' }}</textarea>
+                                        <p class="text-xs text-gray-500 mt-1">System message that will be passed to the model before the text to be summarized. Use '&lt;input&gt;' to indicate where the input text will be inserted.</p>
+                                    </div>
+                                {% else %}
+                                    <div class="p-6 text-center text-gray-500">
+                                        <i class="fas fa-exclamation-triangle text-4xl mb-4 text-yellow-400"></i>
+                                        <p>Task parameters are not available for the task type: <strong>{{ method.get_task_type }}</strong></p>
+                                        <p class="text-sm">You can still configure basic settings and parameters using the JSON editor below.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- All Parameters -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                    <i class="fas fa-cogs mr-3 text-orange-500"></i>
+                                    Parameters
+                                </h2>
+                                <button type="button" id="toggle-json-editor" 
+                                        class="text-sm text-primary hover:text-primary/80 transition-colors">
+                                    <i class="fas fa-code mr-1"></i>Edit as JSON
+                                </button>
+                            </div>
+                            <div class="p-6">
+                                <!-- JSON Editor -->
+                                <div id="json-editor-container" class="hidden">
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600 mb-3">
+                                            Use the JSON editor for advanced parameter configuration, or modify basic settings using the form fields above.
+                                        </p>
+                                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                                            Parameters JSON
+                                        </label>
+                                        <textarea id="parameters-json" class="w-full h-96 px-3 py-2 font-mono text-sm bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                placeholder="Enter parameters as JSON...">{% if method.parameters %}{{ method.parameters|safe }}{% else %}{}{% endif %}</textarea>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <p class="text-xs text-gray-500">Edit the complete parameters configuration</p>
+                                            <div id="json-validation" class="flex items-center space-x-2 text-xs">
+                                                <span id="json-valid" class="hidden text-green-600">
+                                                    <i class="fas fa-check-circle mr-1"></i>Valid JSON
+                                                </span>
+                                                <span id="json-invalid" class="hidden text-red-600">
+                                                    <i class="fas fa-exclamation-circle mr-1"></i>Invalid JSON
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div id="json-error" class="mt-2 text-sm text-red-600 hidden"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visual Parameter Editor -->
+                                <div id="visual-editor-container">
+                                    <div class="space-y-3">
+                                        <p class="text-sm text-gray-600">
+                                            Use the JSON editor for advanced parameter configuration, or modify basic settings using the form fields above.
+                                        </p>
+                                        
+                                        <!-- Current Parameters Preview -->
+                                        <h4 class="block text-sm font-medium text-gray-700">Current Parameters Preview</h4>
+                                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-300 cursor-not-allowed">
+                                            <pre id="parameters-preview" class="text-xs text-gray-600 overflow-x-auto max-h-96 overflow-y-auto">{% if method.parameters %}{{ method.parameters|safe }}{% else %}{}{% endif %}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center justify-between pt-6">
+                            <div class="text-sm text-gray-600">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Changes will be saved when you submit the form.
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <a href="{% url 'projects_show_method' project.id 'project' method.id %}" 
+                                    class="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    Cancel
+                                </a>
+                                <button type="submit" 
+                                        class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200">
+                                    <i class="fas fa-save mr-2"></i>Save Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Configuration Page -->
+<script>
+    // API URLs for backend calls
+    const apiDatasetConfigUrl = '{% url "api_dataset_config" %}';
+
+    // Global variables for form state
+    let parametersJson;
+    let parametersPreview;
+    let isJsonMode = false;
+
+    // Global functions for JSON handling
+    function validateJson() {
+        const jsonValid = document.getElementById('json-valid');
+        const jsonInvalid = document.getElementById('json-invalid');
+        const jsonError = document.getElementById('json-error');
+        
+        try {
+            JSON.parse(parametersJson.value);
+            jsonValid.classList.remove('hidden');
+            jsonInvalid.classList.add('hidden');
+            jsonError.classList.add('hidden');
+            return true;
+        } catch (e) {
+            jsonValid.classList.add('hidden');
+            jsonInvalid.classList.remove('hidden');
+            jsonError.textContent = e.message;
+            jsonError.classList.remove('hidden');
+            return false;
+        }
+    }
+    
+    function updatePreview() {
+        try {
+            const parsed = JSON.parse(parametersJson.value);
+            parametersPreview.textContent = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            parametersPreview.textContent = 'Invalid JSON';
+        }
+    }
+
+    function updateJsonFromForm() {
+        // Collect form data and update JSON
+        const form = document.getElementById('method-config-form');
+        const formData = new FormData(form);
+        
+        // Try to parse existing JSON, fall back to empty object if invalid
+        let currentParams = {};
+        try {
+            currentParams = JSON.parse(parametersJson.value || '{}');
+        } catch (e) {
+            console.warn('Could not parse existing JSON, starting with empty object:', e);
+            currentParams = {};
+        }
+        
+        // Update dataset configuration
+        const numSamplesValue = formData.get('num_samples');
+        const numSamples = numSamplesValue && numSamplesValue.trim() !== '' ? parseInt(numSamplesValue, 10) : null;
+        var taskType = "{{ method.get_task_type }}";
+        
+        currentParams.dataset = {
+            split: formData.get('dataset_split') || 'train',
+            input_column: formData.get('input_column') || '',
+            num_samples: numSamples
+        };
+        
+        // Add task-specific dataset fields
+        if (taskType === 'text-retrieval') {
+            currentParams.dataset.query_id_column = formData.get('query_id_column') || 'doc_id';
+        } else if (taskType === 'summarization' || taskType === 'text-simplification') {
+            currentParams.dataset.reference_column = formData.get('reference_column') || '';
+        }
+        
+        // Update metrics configuration - preserve existing metric parameters
+        const metricsString = formData.get('metrics_list') || '';
+        const metrics = metricsString.split(',').map(m => m.trim()).filter(m => m);
+        const oldMetrics = currentParams.metrics || {};
+        
+        // Always update metrics object (even if empty) to maintain consistency
+        currentParams.metrics = {};
+        metrics.forEach(metric => {
+            // Preserve existing parameters for this metric, or use empty object
+            currentParams.metrics[metric] = oldMetrics[metric] || {};
+            
+            // Add default parameters for specific metrics
+            if (metric === 'sari' && !currentParams.metrics[metric].sources_column) {
+                currentParams.metrics[metric].sources_column = formData.get('input_column') || '';
+            }
+        });
+        
+        // Update task parameters
+        var taskType = "{{ method.get_task_type }}";
+        if (taskType) {
+            currentParams.task_type = taskType;
+            
+            let taskParameters = {};
+            
+            switch (taskType) {
+                case 'text-retrieval':
+                    taskParameters = {
+                        k_sparse: parseInt(document.getElementById('rag_k_sparse')?.value || 10),
+                        k_dense: parseInt(document.getElementById('rag_k_dense')?.value || 10),
+                        stopword_language: document.getElementById('rag_stopword_language')?.value || 'english',
+                        stemming_language: document.getElementById('rag_stemming_language')?.value || 'english',
+                        corpus_name: document.getElementById('rag_corpus_name')?.value || 'dtk-llms/mira_rag_corpus',
+                        corpus_split: document.getElementById('rag_corpus_split')?.value || 'train',
+                        corpus_id_column: document.getElementById('rag_corpus_id_column')?.value || 'doc_idx',
+                        corpus_text_column: document.getElementById('rag_corpus_text_column')?.value || 'doc_text',
+                        metric_cutoff: parseFloat(document.getElementById('rag_metric_cutoff')?.value || 0.5),
+                        batch_size: parseInt(document.getElementById('rag_batch_size')?.value || 4)
+                    };
+                    
+                    // Add qrels parameters if qrels_name is provided
+                    const qrelsName = document.getElementById('rag_qrels_name')?.value;
+                    if (qrelsName && qrelsName.trim()) {
+                        taskParameters.qrels_name = qrelsName;
+                        taskParameters.qrels_split = document.getElementById('rag_qrels_split')?.value || 'train';
+                        taskParameters.qrels_query_id_column = document.getElementById('rag_qrels_query_id_column')?.value || 'query-id';
+                        taskParameters.qrels_corpus_id_column = document.getElementById('rag_qrels_corpus_id_column')?.value || 'corpus-id';
+                        
+                        // Only add qrels_score_column if it has a value
+                        const qrelsScoreColumn = document.getElementById('rag_qrels_score_column')?.value;
+                        if (qrelsScoreColumn && qrelsScoreColumn.trim()) {
+                            taskParameters.qrels_score_column = qrelsScoreColumn;
+                        }
+                    }
+                    break;
+                    
+                case 'summarization':
+                    taskParameters = {
+                        system_message: document.getElementById('sum_system_message')?.value.trim() || 'Briefly summarise the following paper.\nPaper: <input>\nBrief summary:'
+                    };
+                    break;
+
+                case 'text-simplification':
+                    taskParameters = {
+                        system_message: document.getElementById('simp_system_message')?.value.trim() || 'Briefly simplify the following paper.\nPaper: <input>\nBrief simplification:'
+                    };
+                    break;
+            }
+            
+            if (Object.keys(taskParameters).length > 0) {
+                currentParams.task_parameters = taskParameters;
+            }
+        }
+        
+        parametersJson.value = JSON.stringify(currentParams, null, 2);
+        validateJson();
+        updatePreview();
+        
+        // Update hidden form field
+        const hiddenField = document.getElementById('parameters-hidden');
+        if (hiddenField) {
+            hiddenField.value = JSON.stringify(currentParams);
+        }
+    }
+
+    function updateFormFromJson() {
+        try {
+            const params = JSON.parse(parametersJson.value);
+            
+            // Update dataset configuration
+            if (params.dataset) {
+                const datasetSplit = document.getElementById('dataset_split');
+                const inputColumn = document.getElementById('input_column');
+                const queryIdColumn = document.getElementById('query_id_column');
+                const referenceColumn = document.getElementById('reference_column');
+                const numSamples = document.getElementById('num_samples');
+                
+                if (datasetSplit) datasetSplit.value = params.dataset.split || 'train';
+                if (inputColumn) inputColumn.value = params.dataset.input_column || '';
+                if (queryIdColumn) queryIdColumn.value = params.dataset.query_id_column || 'doc_id';
+                if (referenceColumn) referenceColumn.value = params.dataset.reference_column || '';
+                if (numSamples) numSamples.value = params.dataset.num_samples !== undefined ? params.dataset.num_samples : '';
+            }
+            
+            // Update metrics
+            if (params.metrics && typeof params.metrics === 'object') {
+                const metricNames = Object.keys(params.metrics);
+                const metricsField = document.getElementById('metrics_list');
+                if (metricsField) {
+                    metricsField.value = metricNames.join(', ');
+                }
+                
+                // Update checkboxes - preserve metrics even if checkbox doesn't exist
+                document.querySelectorAll('.metric-checkbox').forEach(checkbox => {
+                    checkbox.checked = metricNames.includes(checkbox.value);
+                    updateMetricSelection(checkbox);
+                });
+                
+                // Log warning if metrics exist but no checkboxes are checked
+                const checkedCount = document.querySelectorAll('.metric-checkbox:checked').length;
+                if (metricNames.length > 0 && checkedCount === 0) {
+                    console.warn('Metrics found in JSON but no checkboxes checked. Metrics:', metricNames);
+                }
+            } else if (params.metrics) {
+                // If metrics exists but is not an object, log warning
+                console.warn('Invalid metrics format in parameters:', params.metrics);
+            }
+            
+            // Update task parameters
+            if (params.task_parameters && typeof params.task_parameters === 'object') {
+                var taskType = params.task_type || "{{ method.get_task_type }}";
+                
+                switch (taskType) {
+                    case 'text-retrieval':
+                        const taskParams = params.task_parameters;
+                        if (taskParams.k_sparse !== undefined) {
+                            const kSparseField = document.getElementById('rag_k_sparse');
+                            if (kSparseField) kSparseField.value = taskParams.k_sparse;
+                        }
+                        if (taskParams.k_dense !== undefined) {
+                            const kDenseField = document.getElementById('rag_k_dense');
+                            if (kDenseField) kDenseField.value = taskParams.k_dense;
+                        }
+                        if (taskParams.stopword_language !== undefined) {
+                            const stopwordField = document.getElementById('rag_stopword_language');
+                            if (stopwordField) stopwordField.value = taskParams.stopword_language;
+                        }
+                        if (taskParams.stemming_language !== undefined) {
+                            const stemmingField = document.getElementById('rag_stemming_language');
+                            if (stemmingField) stemmingField.value = taskParams.stemming_language;
+                        }
+                        if (taskParams.corpus_name !== undefined) {
+                            const corpusNameField = document.getElementById('rag_corpus_name');
+                            if (corpusNameField) corpusNameField.value = taskParams.corpus_name;
+                        }
+                        if (taskParams.corpus_split !== undefined) {
+                            const corpusSplitField = document.getElementById('rag_corpus_split');
+                            if (corpusSplitField) corpusSplitField.value = taskParams.corpus_split;
+                        }
+                        if (taskParams.corpus_id_column !== undefined) {
+                            const corpusIdField = document.getElementById('rag_corpus_id_column');
+                            if (corpusIdField) corpusIdField.value = taskParams.corpus_id_column;
+                        }
+                        if (taskParams.corpus_text_column !== undefined) {
+                            const corpusTextField = document.getElementById('rag_corpus_text_column');
+                            if (corpusTextField) corpusTextField.value = taskParams.corpus_text_column;
+                        }
+                        if (taskParams.metric_cutoff !== undefined) {
+                            const metricCutoffField = document.getElementById('rag_metric_cutoff');
+                            if (metricCutoffField) metricCutoffField.value = taskParams.metric_cutoff;
+                        }
+                        if (taskParams.batch_size !== undefined) {
+                            const batchSizeField = document.getElementById('rag_batch_size');
+                            if (batchSizeField) batchSizeField.value = taskParams.batch_size;
+                        }
+                        // Update qrels parameters
+                        if (taskParams.qrels_name !== undefined) {
+                            const qrelsNameField = document.getElementById('rag_qrels_name');
+                            if (qrelsNameField) qrelsNameField.value = taskParams.qrels_name;
+                        }
+                        if (taskParams.qrels_split !== undefined) {
+                            const qrelsSplitField = document.getElementById('rag_qrels_split');
+                            if (qrelsSplitField) qrelsSplitField.value = taskParams.qrels_split;
+                        }
+                        if (taskParams.qrels_query_id_column !== undefined) {
+                            const qrelsQueryIdField = document.getElementById('rag_qrels_query_id_column');
+                            if (qrelsQueryIdField) qrelsQueryIdField.value = taskParams.qrels_query_id_column;
+                        }
+                        if (taskParams.qrels_corpus_id_column !== undefined) {
+                            const qrelsCorpusIdField = document.getElementById('rag_qrels_corpus_id_column');
+                            if (qrelsCorpusIdField) qrelsCorpusIdField.value = taskParams.qrels_corpus_id_column;
+                        }
+                        if (taskParams.qrels_score_column !== undefined) {
+                            const qrelsScoreField = document.getElementById('rag_qrels_score_column');
+                            if (qrelsScoreField) qrelsScoreField.value = taskParams.qrels_score_column;
+                        }
+                        break;
+                        
+                    case 'summarization':
+                        if (params.task_parameters.system_message !== undefined) {
+                            const systemMessageField = document.getElementById('sum_system_message');
+                            if (systemMessageField) systemMessageField.value = params.task_parameters.system_message;
+                        }
+                        break;
+                        
+                    case 'text-simplification':
+                        if (params.task_parameters.system_message !== undefined) {
+                            const systemMessageField = document.getElementById('simp_system_message');
+                            if (systemMessageField) systemMessageField.value = params.task_parameters.system_message;
+                        }
+                        break;
+                }
+            }
+        } catch (e) {
+            console.error('Error updating form from JSON:', e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create a single generic tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'generic-info-tooltip';
+
+        const tooltipHeader = document.createElement('div');
+        tooltipHeader.className = 'tooltip-header';
+
+        const tooltipBody = document.createElement('div');
+        tooltipBody.className = 'tooltip-body';
+
+        tooltip.appendChild(tooltipHeader);
+        tooltip.appendChild(tooltipBody);
+        document.body.appendChild(tooltip);
+        
+        document.addEventListener('mouseenter', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('tooltip-trigger')) {
+                const title = e.target.getAttribute('data-tooltip-title') || 'Information';
+                const infoData = e.target.getAttribute('data-tooltip-info');
+                
+                // Set header
+                tooltipHeader.textContent = title;
+                
+                // Create structured content from data
+                let content = '';
+                try {
+                    if (infoData) {
+                        const info = JSON.parse(infoData);
+                        info.forEach(item => {
+                            // Parse array-like strings for better display
+                            let displayValue = item.value;
+                            
+                            // Check if the value looks like a stringified array
+                            if (typeof displayValue === 'string' && 
+                                ((displayValue.startsWith('[') && displayValue.endsWith(']')) || (displayValue.startsWith("['") && displayValue.endsWith("']")))) {
+                                try {
+                                    // Try to parse as JSON first
+                                    const parsed = JSON.parse(displayValue);
+                                    if (Array.isArray(parsed)) {
+                                        displayValue = parsed.join(', ');
+                                    }
+                                } catch {
+                                    // If JSON parsing fails, try to extract values manually
+                                    // Handle formats like "['test', 'train']" or "[test, train]"
+                                    const match = displayValue.match(/\[(.*)\]/);
+                                    if (match) {
+                                        const innerContent = match[1];
+                                        // Split by comma and clean up quotes
+                                        const items = innerContent.split(',').map(item => 
+                                            item.trim().replace(/^['"]|['"]$/g, '')
+                                        );
+                                        displayValue = items.join(', ');
+                                    }
+                                }
+                            }
+                            
+                            content += `
+                                <div class="info-item">
+                                    <span class="info-label">${item.label}:</span> 
+                                    <span class="info-value">${displayValue}</span>
+                                </div>
+                            `;
+                        });
+                    }
+                } catch (error) {
+                    // Fallback for old format (model tooltips)
+                    const size = e.target.getAttribute('data-model-size');
+                    const architecture = e.target.getAttribute('data-model-architecture');
+                    const vocab_size = e.target.getAttribute('data-model-vocab');
+                    
+                    if (size || architecture || vocab_size) {
+                        tooltipHeader.textContent = 'Model Information';
+                        content = `
+                            <div class="info-item">
+                                <span class="info-label">Size:</span> 
+                                <span class="info-value">${size || 'Unknown'} MB</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Architecture:</span> 
+                                <span class="info-value">${architecture || 'Unknown'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Vocab Size:</span> 
+                                <span class="info-value">${vocab_size || 'Unknown'}</span>
+                            </div>
+                        `;
+                    }
+                }
+                
+                tooltipBody.innerHTML = content || '<div class="info-item">No information available</div>';
+                tooltip.style.display = 'block';
+                
+                // Position tooltip to the right of the trigger
+                const rect = e.target.getBoundingClientRect();
+                tooltip.style.left = (rect.right + 32) + 'px';
+                tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
+            }
+        }, true);
+        
+        document.addEventListener('mouseleave', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('tooltip-trigger')) {
+                tooltip.style.display = 'none';
+            }
+        }, true);
+
+        // Form handling functionality
+        parametersJson = document.getElementById('parameters-json');
+        parametersPreview = document.getElementById('parameters-preview');
+        const jsonEditor = document.getElementById('json-editor-container');
+        const visualEditor = document.getElementById('visual-editor-container');
+        const toggleButton = document.getElementById('toggle-json-editor');
+        const form = document.getElementById('method-config-form');
+        
+        // Initialize parameters JSON
+        try {
+            const currentParams = {{ method_parameters|safe }}
+            parametersJson.value = JSON.stringify(currentParams, null, 2);
+            parametersPreview.textContent = JSON.stringify(currentParams, null, 2);
+            
+            // Initialize hidden form field
+            const hiddenField = document.getElementById('parameters-hidden');
+            if (hiddenField) {
+                hiddenField.value = JSON.stringify(currentParams);
+            }
+        } catch (e) {
+            console.error('Error parsing parameters:', e);
+            parametersJson.value = '{}';
+            parametersPreview.textContent = '{}';
+            
+            // Initialize hidden form field with empty object
+            const hiddenField = document.getElementById('parameters-hidden');
+            if (hiddenField) {
+                hiddenField.value = '{}';
+            }
+        }
+        
+        // Toggle between JSON and visual editor
+        toggleButton.addEventListener('click', function() {
+            if (!isJsonMode) {
+                // Switching TO JSON mode - sync form values to JSON first
+                updateJsonFromForm();
+                jsonEditor.classList.remove('hidden');
+                visualEditor.classList.add('hidden');
+                toggleButton.innerHTML = '<i class="fas fa-eye mr-1"></i>Visual Editor';
+                isJsonMode = true;
+            } else {
+                // Switching FROM JSON mode - validate JSON before switching
+                if (!validateJson()) {
+                    alert('Please fix the JSON syntax errors before switching to visual editor.');
+                    return;
+                }
+                
+                // JSON is valid, safe to sync to form
+                jsonEditor.classList.add('hidden');
+                visualEditor.classList.remove('hidden');
+                toggleButton.innerHTML = '<i class="fas fa-code mr-1"></i>Edit as JSON';
+                isJsonMode = false;
+                updateFormFromJson();
+            }
+        });
+        
+        // JSON validation
+        parametersJson.addEventListener('input', function() {
+            validateJson();
+            updatePreview();
+        });
+        
+        // Allow Tab key to insert indentation in JSON editor
+        parametersJson.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                
+                // Get cursor position
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                
+                // Insert 2 spaces at cursor position
+                const value = this.value;
+                this.value = value.substring(0, start) + '  ' + value.substring(end);
+                
+                // Put cursor after the inserted spaces
+                this.selectionStart = this.selectionEnd = start + 2;
+                
+                // Trigger validation
+                validateJson();
+                updatePreview();
+            }
+        });
+        
+        // Form submission (with double-submission prevention)
+        let isSubmitting = false;
+        form.addEventListener('submit', function(e) {
+            // Always prevent default form submission and use AJAX with JSON
+            e.preventDefault();
+            
+            // Prevent double submission
+            if (isSubmitting) {
+                return;
+            }
+            
+            // Only update JSON from form if we're in visual mode
+            // If in JSON mode, user has edited JSON directly - don't overwrite it
+            if (!isJsonMode) {
+                updateJsonFromForm();
+            }
+            
+            if (!validateJson()) {
+                alert('Please fix the JSON syntax errors before saving.');
+                return;
+            }
+            
+            isSubmitting = true;
+            
+            // Send AJAX request with consolidated JSON parameters
+            submitFormWithJsonParameters();
+        });
+        
+        function submitFormWithJsonParameters() {
+            try {
+                const parameters = JSON.parse(parametersJson.value);
+                
+                // Update the hidden form field with current JSON
+                const hiddenField = document.getElementById('parameters-hidden');
+                if (hiddenField) {
+                    hiddenField.value = JSON.stringify(parameters);
+                }
+                
+                // Create form data from the form (this will include the updated hidden field)
+                const formData = new FormData(form);
+                
+                // Remove individual task parameter fields to avoid confusion
+                const taskParameterFields = [
+                    'rag_k_sparse', 'rag_k_dense', 'rag_stopword_language', 'rag_stemming_language',
+                    'rag_corpus_name', 'rag_corpus_split', 'rag_corpus_id_column', 
+                    'rag_corpus_text_column', 'rag_metric_cutoff', 'rag_batch_size', 'sum_system_message', 'simp_system_message'
+                ];
+                
+                taskParameterFields.forEach(field => {
+                    formData.delete(field);
+                });
+                
+                fetch(form.action || window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (response.headers.get('content-type')?.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // If not JSON response, redirect on success
+                        if (response.ok) {
+                            window.location.href = '{% url "projects_show_method" project.id "project" method.id %}';
+                            return;
+                        } else {
+                            throw new Error('Server error: ' + response.status);
+                        }
+                    }
+                })
+                .then(data => {
+                    isSubmitting = false; // Reset submission flag
+                    if (data && data.success !== undefined) {
+                        if (data.success) {
+                            window.location.href = '{% url "projects_show_method" project.id "project" method.id %}';
+                        } else {
+                            console.error('Error:', data.error);
+                            alert('Error saving configuration: ' + (data.error || 'Unknown error'));
+                        }
+                    }
+                })
+                .catch(error => {
+                    isSubmitting = false; // Reset submission flag on error
+                    console.error('Error:', error);
+                    alert('Error saving configuration: ' + error.message);
+                });
+            } catch (e) {
+                isSubmitting = false; // Reset submission flag on JSON error
+                alert('Invalid JSON: ' + e.message);
+            }
+        }
+        
+        function updateParametersAjax() {
+            try {
+                const parameters = JSON.parse(parametersJson.value);
+                
+                fetch('{% url "method_update_parameters" project.id method.id %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ parameters: parameters })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    isSubmitting = false; // Reset submission flag
+                    if (data.success) {
+                        window.location.href = '{% url "projects_show_method" project.id "project" method.id %}';
+                    } else {
+                        console.error('Error:', data.error);
+                    }
+                })
+                .catch(error => {
+                    isSubmitting = false; // Reset submission flag on error
+                    console.error('Error:', error);
+                    alert('Error updating parameters: ' + error.message);
+                });
+            } catch (e) {
+                isSubmitting = false; // Reset submission flag on JSON error
+                alert('Invalid JSON: ' + e.message);
+            }
+        }
+        
+        // Initial validation
+        validateJson();
+        
+        // Initialize metric selection
+        initializeMetricSelection();
+        
+        // Add event listeners for task parameter fields
+        initializeTaskParameterListeners();
+        
+        // Initialize task parameters from JSON (if switching from JSON mode)
+        updateFormFromJson();
+        
+        // Validate pre-filled corpus dataset in background
+        const corpusNameInput = document.getElementById('rag_corpus_name');
+        if (corpusNameInput && corpusNameInput.value.trim()) {
+            validateDatasetInBackground(
+                'rag_corpus_name',
+                corpusNameInput.value,
+                'rag_corpus_link',
+                'rag-corpus-prefill-error'
+            );
+        }
+        
+        // Validate pre-filled qrels dataset in background
+        const qrelsNameInput = document.getElementById('rag_qrels_name');
+        if (qrelsNameInput && qrelsNameInput.value.trim()) {
+            validateDatasetInBackground(
+                'rag_qrels_name',
+                qrelsNameInput.value,
+                'rag_qrels_link',
+                'rag-qrels-prefill-error'
+            );
+        }
+        
+        // Add input event listeners to hide links when user starts typing
+        if (corpusNameInput) {
+            corpusNameInput.addEventListener('input', function() {
+                hideDatasetLink('rag_corpus_link');
+                // Hide prefill error when user starts editing
+                const prefillError = document.getElementById('rag-corpus-prefill-error');
+                if (prefillError) {
+                    prefillError.classList.add('hidden');
+                }
+            });
+        }
+        
+        if (qrelsNameInput) {
+            qrelsNameInput.addEventListener('input', function() {
+                hideDatasetLink('rag_qrels_link');
+                // Hide prefill error when user starts editing
+                const prefillError = document.getElementById('rag-qrels-prefill-error');
+                if (prefillError) {
+                    prefillError.classList.add('hidden');
+                }
+            });
+        }
+    });
+
+    // Utility functions
+    function updateMetricSelection(checkbox) {
+        const metricName = checkbox.value;
+        const isSelected = checkbox.checked;
+        const selectionBar = document.getElementById(`metric-bar-${metricName}`);
+        
+        // Update visual indicator
+        if (isSelected) {
+            selectionBar.style.backgroundColor = '#8b5cf6'; // purple-500
+        } else {
+            selectionBar.style.backgroundColor = '#d1d5db'; // gray-300
+        }
+        
+        // Update selected metrics display
+        updateSelectedMetricsDisplay();
+        
+        // Update hidden input
+        updateMetricsHiddenInput();
+        
+        // Update JSON preview if not in JSON mode
+        if (!isJsonMode) {
+            updateJsonFromForm();
+        }
+    }
+    
+    function updateSelectedMetricsDisplay() {
+        const selectedMetricsList = document.getElementById('selected-metrics-list');
+        const noMetricsMessage = document.getElementById('no-metrics-selected');
+        const checkboxes = document.querySelectorAll('.metric-checkbox:checked');
+        
+        // Clear current display
+        selectedMetricsList.innerHTML = '';
+        
+        if (checkboxes.length === 0) {
+            noMetricsMessage.style.display = 'block';
+        } else {
+            noMetricsMessage.style.display = 'none';
+            
+            checkboxes.forEach(checkbox => {
+                const metricName = checkbox.value;
+                const metricTag = document.createElement('div');
+                metricTag.className = 'flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm';
+                metricTag.innerHTML = `
+                    <i class="fa-solid fa-chart-line text-xs"></i>
+                    <span>${metricName}</span>
+                    <button type="button" onclick="removeMetric('${metricName}')" class="text-purple-600 hover:text-purple-800 transition-colors">
+                        <i class="fa-solid fa-times text-xs"></i>
+                    </button>
+                `;
+                selectedMetricsList.appendChild(metricTag);
+            });
+        }
+    }
+    
+    function updateMetricsHiddenInput() {
+        const checkboxes = document.querySelectorAll('.metric-checkbox:checked');
+        const selectedMetrics = Array.from(checkboxes).map(cb => cb.value);
+        document.getElementById('metrics_list').value = selectedMetrics.join(', ');
+    }
+    
+    function removeMetric(metricName) {
+        const checkbox = document.getElementById(`metric-checkbox-${metricName}`);
+        if (checkbox) {
+            checkbox.checked = false;
+            updateMetricSelection(checkbox);
+        }
+    }
+    
+    function initializeMetricSelection() {
+        // Initialize selected metrics from existing value
+        const metricsInput = document.getElementById('metrics_list');
+        const currentMetrics = metricsInput.value.split(',').map(m => m.trim()).filter(m => m);
+        
+        currentMetrics.forEach(metricName => {
+            const checkbox = document.getElementById(`metric-checkbox-${metricName}`);
+            if (checkbox) {
+                checkbox.checked = true;
+                updateMetricSelection(checkbox);
+            }
+        });
+    }
+
+    function initializeTaskParameterListeners() {
+        // Task parameter fields that should trigger JSON updates
+        const taskParameterFields = [
+            // Text-retrieval fields
+            'rag_k_sparse', 'rag_k_dense', 'rag_stopword_language', 'rag_stemming_language',
+            'rag_corpus_name', 'rag_corpus_split', 'rag_corpus_id_column', 
+            'rag_corpus_text_column', 'rag_metric_cutoff', 'rag_batch_size',
+            // Qrels fields
+            'rag_qrels_name', 'rag_qrels_split', 'rag_qrels_query_id_column',
+            'rag_qrels_corpus_id_column', 'rag_qrels_score_column',
+            // Summarization fields
+            'sum_system_message',
+            // Text-simplification fields
+            'simp_system_message'
+        ];
+        
+        taskParameterFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                // Add both input and change event listeners
+                field.addEventListener('input', function() {
+                    if (!isJsonMode) {
+                        updateJsonFromForm();
+                    }
+                });
+                field.addEventListener('change', function() {
+                    if (!isJsonMode) {
+                        updateJsonFromForm();
+                    }
+                });
+            }
+        });
+        
+        // Dataset configuration fields that should also trigger JSON updates
+        const datasetFields = [
+            'dataset_split', 'input_column', 'query_id_column', 'reference_column', 'num_samples'
+        ];
+        
+        datasetFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', function() {
+                    if (!isJsonMode) {
+                        updateJsonFromForm();
+                    }
+                });
+                field.addEventListener('change', function() {
+                    if (!isJsonMode) {
+                        updateJsonFromForm();
+                    }
+                });
+            }
+        });
+    }
+
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        dropdown.classList.toggle('hidden');
+        
+        // Close other dropdowns
+        document.querySelectorAll('[id$="-dropdown"]').forEach(d => {
+            if (d.id !== dropdownId) {
+                d.classList.add('hidden');
+            }
+        });
+    }
+
+    function selectColumn(fieldId, value) {
+        document.getElementById(fieldId).value = value;
+        // Close all dropdowns
+        document.querySelectorAll('[id$="-dropdown"]').forEach(d => {
+            d.classList.add('hidden');
+        });
+    }
+
+    function addMetric(metric) {
+        const checkbox = document.getElementById(`metric-checkbox-${metric}`);
+        if (checkbox && !checkbox.checked) {
+            checkbox.checked = true;
+            updateMetricSelection(checkbox);
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    /**
+     * Shows the dataset link icon for a given field
+     */
+    function showDatasetLink(linkId, datasetName) {
+        const link = document.getElementById(linkId);
+        if (link && datasetName) {
+            link.href = `https://huggingface.co/datasets/${datasetName}`;
+            link.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Hides the dataset link icon for a given field
+     */
+    function hideDatasetLink(linkId) {
+        const link = document.getElementById(linkId);
+        if (link) {
+            link.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Validates a dataset in the background (for pre-filled values)
+     */
+    function validateDatasetInBackground(fieldId, datasetName, linkId, errorContainerId) {
+        if (!datasetName || !datasetName.trim()) return;
+        
+        const datasetId = datasetName.trim();
+        const errorContainer = document.getElementById(errorContainerId);
+        
+        // Basic validation for HuggingFace dataset ID format
+        if (!datasetId.includes('/') || datasetId.split('/').length !== 2) {
+            if (errorContainer) {
+                errorContainer.classList.remove('hidden');
+            }
+            return;
+        }
+        
+        // Check if the dataset exists on HuggingFace
+        const url = `https://huggingface.co/api/datasets/${datasetId}`;
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Dataset not found');
+                }
+                return response.json();
+            })
+            .then(datasetInfo => {
+                // Dataset is valid - show the link
+                showDatasetLink(linkId, datasetId);
+                // Hide error message if it was showing
+                if (errorContainer) {
+                    errorContainer.classList.add('hidden');
+                }
+            })
+            .catch(error => {
+                // Dataset validation failed - show warning
+                if (errorContainer) {
+                    errorContainer.classList.remove('hidden');
+                }
+                // Keep link hidden
+                hideDatasetLink(linkId);
+            });
+    }
+
+    /**
+     * Validates the RAG corpus dataset by checking if it exists on HuggingFace
+     * and retrieving its configuration information
+     */
+    function validateRAGCorpus() {
+        const corpusNameInput = document.getElementById('rag_corpus_name');
+        const validationDiv = document.getElementById('rag-corpus-validation');
+        
+        if (!corpusNameInput || !validationDiv) return;
+        
+        const datasetId = corpusNameInput.value.trim();
+        
+        if (!datasetId) {
+            showRAGCorpusValidation('error', 'Please enter a corpus dataset name.');
+            hideDatasetLink('rag_corpus_link');
+            return;
+        }
+        
+        // Basic validation for HuggingFace dataset ID format
+        if (!datasetId.includes('/') || datasetId.split('/').length !== 2) {
+            showRAGCorpusValidation('error', 'Please enter a valid HuggingFace dataset ID (e.g., owner/dataset-name).');
+            hideDatasetLink('rag_corpus_link');
+            return;
+        }
+        
+        // Show loading state
+        showRAGCorpusValidation('loading', 'Validating corpus dataset...');
+        hideDatasetLink('rag_corpus_link');
+        
+        // Check if the dataset exists on HuggingFace
+        const url = `https://huggingface.co/api/datasets/${datasetId}`;
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Dataset not found on HuggingFace (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(datasetInfo => {
+                // Dataset exists, now get configuration
+                if (typeof apiDatasetConfigUrl !== 'undefined') {
+                    const configUrl = `${apiDatasetConfigUrl}?dataset_name=${encodeURIComponent(datasetId)}`;
+                    return fetch(configUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            let config = {};
+                            if (data.config) {
+                                try {
+                                    config = JSON.parse(data.config);
+                                } catch (e) {
+                                    console.warn('Error parsing config JSON:', e);
+                                    config = data.config; // Use as-is if it's already an object
+                                }
+                            }
+
+                            if (!config.splits) {
+                                showRAGCorpusValidation('success', 'Dataset found on HuggingFace. No split information available - manual entry enabled.');
+                                // Convert dropdown to text input for manual entry
+                                convertCorpusSplitToTextInput();
+                                updateJsonFromForm();
+                                return;
+                            }
+
+                            const corpusSplits = Object.keys(config.splits);
+                            // Update corpus split options if splits are available
+                            updateCorpusSplitOptions(corpusSplits);
+
+                            showRAGCorpusValidation('success', `Dataset validated successfully! Found ${corpusSplits.length} splits.`);
+
+                            // Show the link icon
+                            showDatasetLink('rag_corpus_link', datasetId);
+                            // Hide prefill error if it was showing
+                            const prefillError = document.getElementById('rag-corpus-prefill-error');
+                            if (prefillError) {
+                                prefillError.classList.add('hidden');
+                            }
+
+                            // Update JSON from form to reflect validated corpus
+                            updateJsonFromForm();
+                        });
+                } else {
+                    // No API available, just show basic validation
+                    showRAGCorpusValidation('success', 'Dataset found on HuggingFace.');
+                    showDatasetLink('rag_corpus_link', datasetId);
+                    // Hide prefill error if it was showing
+                    const prefillError = document.getElementById('rag-corpus-prefill-error');
+                    if (prefillError) {
+                        prefillError.classList.add('hidden');
+                    }
+                    updateJsonFromForm();
+                }
+            })
+            .catch(error => {
+                console.error('Error validating RAG corpus:', error);
+                showRAGCorpusValidation('error', error.message || 'Failed to validate dataset.');
+                hideDatasetLink('rag_corpus_link');
+            });
+    }
+
+    /**
+     * Updates the corpus split dropdown options based on available splits
+     */
+    function updateCorpusSplitOptions(splits) {
+        let corpusSplitField = document.getElementById('rag_corpus_split');
+        if (!corpusSplitField || !Array.isArray(splits)) return;
+        
+        const currentValue = corpusSplitField.value;
+        const parentElement = corpusSplitField.parentElement;
+        
+        // If currently a text input, convert back to select
+        if (corpusSplitField.tagName === 'INPUT') {
+            const newSelect = document.createElement('select');
+            newSelect.id = 'rag_corpus_split';
+            newSelect.name = 'rag_corpus_split';
+            newSelect.className = corpusSplitField.className;
+            
+            // Replace the input with the select
+            parentElement.replaceChild(newSelect, corpusSplitField);
+            corpusSplitField = newSelect;
+            
+            // Remove indicator badge if it exists
+            const indicator = parentElement.querySelector('.split-field-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        // Clear existing options
+        corpusSplitField.innerHTML = '';
+        
+        // Add new options
+        splits.forEach(split => {
+            const option = document.createElement('option');
+            option.value = split;
+            option.textContent = split;
+            corpusSplitField.appendChild(option);
+        });
+        
+        // Try to restore previous selection, or default to 'train' if available
+        if (splits.includes(currentValue)) {
+            corpusSplitField.value = currentValue;
+        } else if (splits.includes('train')) {
+            corpusSplitField.value = 'train';
+        } else if (splits.length > 0) {
+            corpusSplitField.value = splits[0];
+        }
+    }
+
+    /**
+     * Converts the corpus split select to a text input for free-form entry
+     */
+    function convertCorpusSplitToTextInput() {
+        const container = document.getElementById('rag_corpus_split')?.parentElement;
+        if (!container) return;
+        
+        // Remove any existing input/select and indicator
+        const oldInput = container.querySelector('#rag_corpus_split');
+        const oldIndicator = container.querySelector('.split-field-indicator');
+        if (oldInput) oldInput.remove();
+        if (oldIndicator) oldIndicator.remove();
+        
+        const currentValue = oldInput?.value || '';
+        
+        // Create new text input
+        const inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        inputElement.id = 'rag_corpus_split';
+        inputElement.name = 'rag_corpus_split';
+        inputElement.value = ''; // Leave blank for user to fill
+        inputElement.placeholder = 'e.g., train, test, validation';
+        inputElement.className = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
+        inputElement.addEventListener('input', function() {
+            if (!isJsonMode) {
+                updateJsonFromForm();
+            }
+        });
+        
+        // Add indicator badge
+        const indicator = document.createElement('span');
+        indicator.className = 'split-field-indicator text-xs px-2 py-1 rounded bg-orange-100 text-orange-800 inline-block mt-1';
+        indicator.innerHTML = '<i class="fa-solid fa-pencil mr-1"></i>Free-form entry (no verified splits available)';
+        
+        // Insert input and indicator
+        const label = container.querySelector('label');
+        const helpText = container.querySelector('p.text-xs');
+        if (label && helpText) {
+            container.insertBefore(inputElement, helpText);
+            container.insertBefore(indicator, helpText);
+        } else {
+            container.appendChild(inputElement);
+            container.appendChild(indicator);
+        }
+    }
+
+    /**
+     * Shows validation feedback for RAG corpus dataset
+     */
+    function showRAGCorpusValidation(type, message) {
+        const validationDiv = document.getElementById('rag-corpus-validation');
+        if (!validationDiv) return;
+        
+        validationDiv.classList.remove('hidden');
+        
+        let iconClass, bgClass, textClass;
+        
+        switch (type) {
+            case 'success':
+                iconClass = 'fa-solid fa-check-circle text-green-500';
+                bgClass = 'bg-green-50 border-green-200';
+                textClass = 'text-green-800';
+                break;
+            case 'error':
+                iconClass = 'fa-solid fa-exclamation-triangle text-red-500';
+                bgClass = 'bg-red-50 border-red-200';
+                textClass = 'text-red-800';
+                break;
+            case 'loading':
+                iconClass = 'fa-solid fa-spinner fa-spin text-blue-500';
+                bgClass = 'bg-blue-50 border-blue-200';
+                textClass = 'text-blue-800';
+                break;
+            default:
+                iconClass = 'fa-solid fa-info-circle text-gray-500';
+                bgClass = 'bg-gray-50 border-gray-200';
+                textClass = 'text-gray-800';
+        }
+        
+        validationDiv.innerHTML = `
+            <div class="p-3 border rounded-md ${bgClass}">
+                <div class="flex items-start gap-2">
+                    <i class="${iconClass} mt-0.5"></i>
+                    <p class="text-sm ${textClass}">${message}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Validates the RAG qrels dataset by checking if it exists on HuggingFace
+     * and retrieving its configuration information
+     */
+    function validateRAGQrels() {
+        const qrelsNameInput = document.getElementById('rag_qrels_name');
+        const validationDiv = document.getElementById('rag-qrels-validation');
+        
+        if (!qrelsNameInput || !validationDiv) return;
+        
+        const datasetId = qrelsNameInput.value.trim();
+        
+        if (!datasetId) {
+            showRAGQrelsValidation('error', 'Please enter a qrels dataset name.');
+            hideDatasetLink('rag_qrels_link');
+            return;
+        }
+        
+        // Basic validation for HuggingFace dataset ID format
+        if (!datasetId.includes('/') || datasetId.split('/').length !== 2) {
+            showRAGQrelsValidation('error', 'Invalid dataset ID format. Expected format: owner/dataset-name');
+            hideDatasetLink('rag_qrels_link');
+            return;
+        }
+        
+        // Show loading state
+        showRAGQrelsValidation('loading', 'Validating qrels dataset...');
+        hideDatasetLink('rag_qrels_link');
+        
+        // Check if the dataset exists on HuggingFace
+        const url = `https://huggingface.co/api/datasets/${datasetId}`;
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Dataset not found: ${datasetId}`);
+                }
+                return response.json();
+            })
+            .then(datasetInfo => {
+                // Dataset exists, now get configuration
+                if (typeof apiDatasetConfigUrl !== 'undefined') {
+                    const configUrl = `${apiDatasetConfigUrl}?dataset_name=${encodeURIComponent(datasetId)}`;
+                    return fetch(configUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch dataset configuration');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            let config = {};
+                            if (data.config) {
+                                try {
+                                    config = JSON.parse(data.config);
+                                } catch (e) {
+                                    console.warn('Error parsing config JSON:', e);
+                                    config = data.config; // Use as-is if it's already an object
+                                }
+                            } else if (data.error) {
+                                console.warn('Dataset config error:', data.error);
+                            }
+
+                            if (!config.splits) {
+                                showRAGQrelsValidation('success', 'Dataset found on HuggingFace. No split information available - manual entry enabled.');
+                                // Convert dropdown to text input for manual entry
+                                convertQrelsSplitToTextInput();
+                                updateJsonFromForm();
+                                return;
+                            }
+
+                            const qrelsSplits = Object.keys(config.splits);
+                            // Update qrels split options if splits are available
+                            updateQrelsSplitOptions(qrelsSplits);
+
+                            showRAGQrelsValidation('success', `Dataset validated successfully! Found ${qrelsSplits.length} splits.`);
+
+                            // Show the link icon
+                            showDatasetLink('rag_qrels_link', datasetId);
+                            // Hide prefill error if it was showing
+                            const prefillError = document.getElementById('rag-qrels-prefill-error');
+                            if (prefillError) {
+                                prefillError.classList.add('hidden');
+                            }
+
+                            // Update JSON from form to reflect validated qrels
+                            updateJsonFromForm();
+                        });
+                } else {
+                    showRAGQrelsValidation('success', 'Dataset found on HuggingFace.');
+                    showDatasetLink('rag_qrels_link', datasetId);
+                    // Hide prefill error if it was showing
+                    const prefillError = document.getElementById('rag-qrels-prefill-error');
+                    if (prefillError) {
+                        prefillError.classList.add('hidden');
+                    }
+                    updateJsonFromForm();
+                }
+            })
+            .catch(error => {
+                showRAGQrelsValidation('error', `Dataset validation failed: ${error.message}`);
+                hideDatasetLink('rag_qrels_link');
+            });
+    }
+
+    /**
+     * Updates the qrels split dropdown options based on available splits
+     */
+    function updateQrelsSplitOptions(splits) {
+        let qrelsSplitField = document.getElementById('rag_qrels_split');
+        if (!qrelsSplitField || !Array.isArray(splits)) return;
+        
+        const currentValue = qrelsSplitField.value;
+        const parentElement = qrelsSplitField.parentElement;
+        
+        // If currently a text input, convert back to select
+        if (qrelsSplitField.tagName === 'INPUT') {
+            const newSelect = document.createElement('select');
+            newSelect.id = 'rag_qrels_split';
+            newSelect.name = 'rag_qrels_split';
+            newSelect.className = qrelsSplitField.className;
+            
+            // Replace the input with the select
+            parentElement.replaceChild(newSelect, qrelsSplitField);
+            qrelsSplitField = newSelect;
+            
+            // Remove indicator badge if it exists
+            const indicator = parentElement.querySelector('.split-field-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        // Clear existing options
+        qrelsSplitField.innerHTML = '';
+        
+        // Add new options
+        splits.forEach(split => {
+            const option = document.createElement('option');
+            option.value = split;
+            option.textContent = split;
+            qrelsSplitField.appendChild(option);
+        });
+        
+        // Try to restore previous selection, or default to 'train' if available
+        if (splits.includes(currentValue)) {
+            qrelsSplitField.value = currentValue;
+        } else if (splits.includes('train')) {
+            qrelsSplitField.value = 'train';
+        } else if (splits.length > 0) {
+            qrelsSplitField.value = splits[0];
+        }
+    }
+
+    /**
+     * Converts the qrels split select to a text input for free-form entry
+     */
+    function convertQrelsSplitToTextInput() {
+        const container = document.getElementById('rag_qrels_split')?.parentElement;
+        if (!container) return;
+        
+        // Remove any existing input/select and indicator
+        const oldInput = container.querySelector('#rag_qrels_split');
+        const oldIndicator = container.querySelector('.split-field-indicator');
+        if (oldInput) oldInput.remove();
+        if (oldIndicator) oldIndicator.remove();
+        
+        const currentValue = oldInput?.value || '';
+        
+        // Create new text input
+        const inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        inputElement.id = 'rag_qrels_split';
+        inputElement.name = 'rag_qrels_split';
+        inputElement.value = ''; // Leave blank for user to fill
+        inputElement.placeholder = 'e.g., train, test, validation';
+        inputElement.className = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
+        inputElement.addEventListener('input', function() {
+            if (!isJsonMode) {
+                updateJsonFromForm();
+            }
+        });
+        
+        // Add indicator badge
+        const indicator = document.createElement('span');
+        indicator.className = 'split-field-indicator text-xs px-2 py-1 rounded bg-orange-100 text-orange-800 inline-block mt-1';
+        indicator.innerHTML = '<i class="fa-solid fa-pencil mr-1"></i>Free-form entry (no verified splits available)';
+        
+        // Insert input and indicator
+        const label = container.querySelector('label');
+        const helpText = container.querySelector('p.text-xs');
+        if (label && helpText) {
+            container.insertBefore(inputElement, helpText);
+            container.insertBefore(indicator, helpText);
+        } else {
+            container.appendChild(inputElement);
+            container.appendChild(indicator);
+        }
+    }
+
+    /**
+     * Shows validation feedback for RAG qrels dataset
+     */
+    function showRAGQrelsValidation(type, message) {
+        const validationDiv = document.getElementById('rag-qrels-validation');
+        if (!validationDiv) return;
+        
+        validationDiv.classList.remove('hidden');
+        
+        let iconClass, bgClass, textClass;
+        
+        switch (type) {
+            case 'success':
+                iconClass = 'fa-solid fa-check-circle text-green-500';
+                bgClass = 'bg-green-50 border-green-200';
+                textClass = 'text-green-800';
+                break;
+            case 'error':
+                iconClass = 'fa-solid fa-exclamation-triangle text-red-500';
+                bgClass = 'bg-red-50 border-red-200';
+                textClass = 'text-red-800';
+                break;
+            case 'loading':
+                iconClass = 'fa-solid fa-spinner fa-spin text-blue-500';
+                bgClass = 'bg-blue-50 border-blue-200';
+                textClass = 'text-blue-800';
+                break;
+            default:
+                iconClass = 'fa-solid fa-info-circle text-gray-500';
+                bgClass = 'bg-gray-50 border-gray-200';
+                textClass = 'text-gray-800';
+        }
+        
+        validationDiv.innerHTML = `
+            <div class="p-3 border rounded-md ${bgClass}">
+                <div class="flex items-start gap-2">
+                    <i class="${iconClass} mt-0.5"></i>
+                    <p class="text-sm ${textClass}">${message}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.relative')) {
+            document.querySelectorAll('[id$="-dropdown"]').forEach(d => {
+                d.classList.add('hidden');
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,2988 @@
+{% load comparison_tags %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report_title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .print-break {
+                page-break-before: always;
+            }
+        }
+
+        .comparison-table {
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        .comparison-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .sample-row:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .job-output {
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+
+        @media (min-width: 1280px) {
+            .job-output {
+                max-width: 400px;
+            }
+        }
+
+        @media (min-width: 1536px) {
+            .job-output {
+                max-width: 500px;
+            }
+        }
+
+        .metric-cell {
+            min-width: 120px;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Fallback colors for when dynamic colors fail */
+        .metric-value.metric-excellent {
+            background-color: #059669;
+        }
+
+        .metric-value.metric-very-good {
+            background-color: #10b981;
+        }
+
+        .metric-value.metric-good {
+            background-color: #0891b2;
+        }
+
+        .metric-value.metric-medium {
+            background-color: #d97706;
+        }
+
+        .metric-value.metric-poor {
+            background-color: #dc2626;
+        }
+
+        .document-item {
+            border-left: 3px solid #e5e7eb;
+            padding-left: 8px;
+            margin-bottom: 8px;
+        }
+
+        .document-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .additional-docs {
+            border-top: 1px solid #f3f4f6;
+            padding-top: 8px;
+        }
+
+        .expand-docs-btn {
+            transition: all 0.2s ease;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .score-excellent {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .score-good {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .score-fair {
+            background-color: #fed7aa;
+            color: #9a3412;
+        }
+
+        .score-poor {
+            background-color: #fecaca;
+            color: #991b1b;
+        }
+
+        /* SHAP/LXT Token Visualization Styles */
+        .diagnostic-token {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 1px;
+            border-radius: 3px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .diagnostic-output-token {
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .diagnostic-output-token:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .diagnostic-output-token.locked {
+            border: 2px solid #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        .diagnostic-tooltip {
+            position: fixed;
+            display: none;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+
+        .diagnostic-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #f9fafb;
+            margin-bottom: 16px;
+        }
+
+        .diagnostic-job-container {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 12px;
+            background-color: white;
+        }
+
+        .token-container {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <div class="bg-white shadow-lg mb-8">
+        <div class="max-w-full mx-auto px-6 lg:px-12 xl:px-16 py-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ report_title }}</h1>
+                <div class="text-lg text-gray-600 mb-4">
+                    Project: <span class="font-semibold">{{ project.name }}</span> |
+                    Task Type: <span class="font-semibold">{{ task_type }}</span>
+                </div>
+                <div class="text-sm text-gray-500">
+                    Generated on {{ generated_at|date:"F d, Y \a\t H:i" }} |
+                    {{ selected_jobs_count }} jobs compared across {{ max_samples }} samples
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-full mx-auto px-6 lg:px-12 xl:px-16 pb-8">
+        <!-- Executive Summary -->
+        <div class="bg-primary rounded-lg p-6 mb-8 text-white">
+            <h2 class="text-2xl font-bold mb-4">
+                <i class="fas fa-chart-line mr-2"></i>Executive Summary
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6">
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 xl:col-span-2">
+                    <div class="text-3xl font-bold">{{ selected_jobs_count }}</div>
+                    <div class="text-sm opacity-90">Jobs Compared</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 xl:col-span-2">
+                    <div class="text-3xl font-bold">{{ max_samples }}</div>
+                    <div class="text-sm opacity-90">Test Samples</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 xl:col-span-2">
+                    <div class="text-3xl font-bold">{{ task_type|title }}</div>
+                    <div class="text-sm opacity-90">Task Type</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Visualization Charts -->
+        <div class="bg-white rounded-lg shadow-lg mb-8">
+            <div class="bg-primary px-6 py-4 rounded-t-lg text-white">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-chart-area mr-2"></i>Performance Comparison
+                </h2>
+            </div>
+            <div class="p-6">
+                <!-- Normalization Notice -->
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <strong>Chart Normalization:</strong> All metrics are normalized to a 0-1 scale for
+                                comparison.
+                                Readability metrics (e.g., Flesch-Kincaid: 0-100,) are automatically scaled.
+                                Hover over chart bars to see both original and normalized values.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Metric Performance Comparison -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Metric Performance Comparison</h3>
+                        <canvas id="metricComparisonChart" width="400" height="300"></canvas>
+                    </div>
+
+                    <!-- Runtime Comparison -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Job Runtime Comparison</h3>
+                        <canvas id="runtimeComparisonChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Overview -->
+        <div class="bg-white rounded-lg shadow-lg mb-8">
+            <div class="bg-primary px-6 py-4 rounded-t-lg text-white">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-briefcase mr-2"></i>Job Overview
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+                    {% for job in jobs %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Job #{{ job.id|short_id }}
+                            </h3>
+                            <div class="flex items-center space-x-3">
+                                <span
+                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                        {% if job.status == 'COMPLETED' %}bg-green-100 text-green-800{% elif job.status == 'FAILED' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {% if job.status == 'COMPLETED' %}
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    {% elif job.status == 'FAILED' %}
+                                    <i class="fas fa-times-circle mr-1"></i>
+                                    {% else %}
+                                    <i class="fas fa-clock mr-1"></i>
+                                    {% endif %}
+                                    {{ job.status }}
+                                </span>
+                                <span class="text-sm text-gray-500">
+                                    Runtime: {{ job.runtime|floatformat:2 }}s
+                                </span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium text-gray-700">Created:</span>
+                                <span class="text-gray-600">{{ job.created_at|format_datetime:"full" }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-gray-700">Updated:</span>
+                                <span class="text-gray-600">{{ job.updated_at|format_datetime:"full" }}</span>
+                            </div>
+                        </div>
+                        {% if job.result.summary %}
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <h4 class="font-medium text-gray-700 mb-2">Performance Summary:</h4>
+                            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
+                                {% for metric_name, metric_data in job.result.summary.items %}
+                                {% if metric_data.mean is not None %}
+                                {% with normalized_mean=metric_data.mean|normalize_metric_for_display:metric_name %}
+                                <div class="text-center">
+                                    <div class="text-lg font-bold text-primary"
+                                        title="Original: {{ metric_data.mean|floatformat:3 }} | Normalized: {{ normalized_mean|floatformat:3 }}">
+                                        {{ normalized_mean|floatformat:3 }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 uppercase break-words"
+                                        title="{{ metric_name }} (avg)">
+                                        {{ metric_name }} (avg)
+                                    </div>
+                                </div>
+                                {% endwith %}
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if job.tags %}
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <h4 class="font-medium text-gray-700 mb-2">Diagnostic Tags:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                {% for tag in job.tags %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                {% if tag.category == 'Symptom' %}bg-red-100 text-red-800
+                                                {% elif tag.category == 'Sign' %}bg-orange-100 text-orange-800
+                                                {% elif tag.category == 'Failure Pattern' %}bg-purple-100 text-purple-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}"
+                                    title="{{ tag.description }}">
+                                    {% if tag.category == 'Symptom' %}
+                                    <i class="fas fa-exclamation-triangle mr-1 text-xs"></i>
+                                    {% elif tag.category == 'Sign' %}
+                                    <i class="fas fa-search mr-1 text-xs"></i>
+                                    {% elif tag.category == 'Failure Pattern' %}
+                                    <i class="fas fa-chart-line mr-1 text-xs"></i>
+                                    {% else %}
+                                    <i class="fas fa-tag mr-1 text-xs"></i>
+                                    {% endif %}
+                                    {{ tag.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tags Overview -->
+        {% if jobs|jobs_have_tags %}
+        <div class="bg-white rounded-lg shadow-lg mb-8">
+            <div class="bg-primary px-6 py-4 rounded-t-lg text-white">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-tags mr-2"></i>Diagnostic Tags Overview
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-6">
+                    {% for job in jobs %}
+                    {% if job.tags %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                            Job #{{ job.id|short_id }}
+                            <span class="text-sm font-normal text-gray-500">
+                                ({{ job.created_at|format_datetime:"short" }})
+                            </span>
+                        </h3>
+                        <div class="flex flex-wrap gap-3">
+                            {% for tag in job.tags %}
+                            <div
+                                class="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                                <div class="flex items-center mb-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2
+                                                    {% if tag.category == 'Symptom' %}bg-red-100 text-red-800
+                                                    {% elif tag.category == 'Sign' %}bg-orange-100 text-orange-800
+                                                    {% elif tag.category == 'Failure Pattern' %}bg-purple-100 text-purple-800
+                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {% if tag.category == 'Symptom' %}
+                                        <i class="fas fa-exclamation-triangle mr-1 text-xs"></i>
+                                        {% elif tag.category == 'Sign' %}
+                                        <i class="fas fa-search mr-1 text-xs"></i>
+                                        {% elif tag.category == 'Failure Pattern' %}
+                                        <i class="fas fa-chart-line mr-1 text-xs"></i>
+                                        {% else %}
+                                        <i class="fas fa-tag mr-1 text-xs"></i>
+                                        {% endif %}
+                                        {{ tag.category }}
+                                    </span>
+                                    <span class="font-semibold text-gray-900">{{ tag.name }}</span>
+                                </div>
+                                {% if tag.description %}
+                                <p class="text-sm text-gray-600 mb-2">{{ tag.description }}</p>
+                                {% endif %}
+                                {% if tag.paper_reference %}
+                                <div class="text-xs text-gray-500 mb-2">
+                                    <span class="font-medium">Paper:</span>
+                                    <a href="{{ tag.paper_reference }}" target="_blank"
+                                        class="text-blue-600 hover:underline">
+                                        {{ tag.paper_reference|truncatechars:80 }}
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Detailed Results -->
+        <div class="bg-white rounded-lg shadow-lg mb-8">
+            <div class="bg-primary px-6 py-4 rounded-t-lg text-white">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-table mr-2"></i>Detailed Comparison Results
+                </h2>
+            </div>
+            <div class="p-6">
+                <!-- Metric Normalization Notice -->
+                <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-amber-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-amber-700">
+                                <strong>Metric Normalization:</strong> All metric values in this report are normalized
+                                to a 0-1 scale for consistent comparison.
+                                Hover over metric values to see both the original and normalized values.
+                                This applies to readability scores (e.g., Flesch-Kincaid), grade levels, and other
+                                metrics with different ranges.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outputs Comparison -->
+                <div class="mb-8 overflow-x-auto">
+                    <!-- Title and Color Legend on same row -->
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Output Comparison</h3>
+                        <!-- Color Legend -->
+                        {% generate_color_scale metric_thresholds "RdYlGn" as color_scale %}
+                        {% if color_scale %}
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm font-medium text-gray-700">Performance Scale:</span>
+                            <div class="flex flex-wrap gap-3">
+                                {% for scale_item in color_scale %}
+                                <div class="flex items-center space-x-1">
+                                    <div class="w-3 h-3 rounded" style="background-color: {{ scale_item.color }};">
+                                    </div>
+                                    <span class="text-sm text-gray-600">{{ scale_item.label }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <table class="comparison-table w-full min-w-max">
+                        <thead>
+                            <tr>
+                                <th class="w-16 lg:w-20">Sample #</th>
+                                <th class="w-80 lg:w-96 xl:w-[400px] 2xl:w-[500px]">Input</th>
+                                {% if task_type == 'text-retrieval' %}
+                                <th class="w-96 lg:w-[400px] xl:w-[450px] 2xl:w-[550px]">Retrieved Documents</th>
+                                {% endif %}
+                                {% for job in jobs %}
+                                <th class="w-96 lg:w-[400px] xl:w-[450px] 2xl:w-[550px]">
+                                    Job #{{ job.id|short_id }}
+                                    <div class="text-xs font-normal text-gray-500 mt-1">
+                                        {{ job.created_at|format_datetime:"short" }}
+                                    </div>
+                                </th>
+                                {% endfor %}
+                                <th class="w-80 lg:w-96 xl:w-[400px] 2xl:w-[500px]">Relevance</th>
+                                <th class="w-64 lg:w-80">Diagnostic Tags</th>
+                                <th class="w-64 lg:w-80">Diagnostics</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sample_idx in samples_range %}
+                            <tr class="sample-row">
+                                <!-- Sample Number -->
+                                <td class="text-center font-medium text-gray-600">
+                                    {{ sample_idx|add:1 }}
+                                </td>
+
+                                <!-- Input -->
+                                <td class="job-output">
+                                    {% with input_text=jobs|get_sample_input:sample_idx %}
+                                    {% if input_text %}
+                                    <div class="text-sm">
+                                        <div id="input-content-{{ forloop.counter }}" class="input-content">
+                                            {{ input_text }}
+                                        </div>
+                                        <button id="input-toggle-{{ forloop.counter }}"
+                                            class="input-toggle-btn text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none hidden"
+                                            onclick="toggleInputText({{ forloop.counter }}, '{{ input_text|escapejs }}')">
+                                            Show more
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-gray-400">—</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+
+                                <!-- Retrieved Documents (only for text-retrieval) -->
+                                {% if task_type == 'text-retrieval' %}
+                                <td class="job-output">
+                                    {% with sample_result=jobs.0|get_sample_result:sample_idx %}
+                                    {% if sample_result.documents %}
+                                    <div class="document-list">
+                                        <!-- Show first 3 documents -->
+                                        {% for doc in sample_result.documents|slice_documents:3 %}
+                                        <div class="document-item">
+                                            <div class="text-xs text-gray-600 mb-1">
+                                                {% if doc.bm25_score %}
+                                                BM25: <span class="text-primary">{{ doc.bm25_score|floatformat:3
+                                                    }}</span>
+                                                {% endif %}
+                                                {% if doc.rerank_score %}
+                                                | Rerank: <span class="text-primary">{{ doc.rerank_score|floatformat:3
+                                                    }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-sm">
+                                                <span
+                                                    class="cursor-help hover:bg-gray-100 p-1 rounded transition-colors"
+                                                    title="{{ doc.doc_text }}"
+                                                    onclick="showFullText('{{ doc.doc_text|escapejs }}', '{{ doc.doc_id }}')">
+                                                    {{ doc.doc_text|truncatewords:20 }}
+                                                    {% if doc.doc_text|wordcount > 20 %}
+                                                    <i class="fas fa-expand-arrows-alt ml-1 text-primary text-xs"></i>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+
+                                        <!-- Show remaining documents in expandable section -->
+                                        {% if sample_result.documents|length > 3 %}
+                                        <div class="mt-2">
+                                            <button
+                                                class="expand-docs-btn text-xs text-primary hover:text-primary/75 font-medium focus:outline-none"
+                                                onclick="toggleDocuments(this, {{ sample_idx }})">
+                                                <i class="fas fa-chevron-down mr-1"></i>
+                                                Show {{ sample_result.documents|length|add:"-3" }} more documents
+                                            </button>
+                                            <div class="additional-docs hidden mt-2" id="docs-{{ sample_idx }}">
+                                                {% for doc in sample_result.documents %}
+                                                {% if forloop.counter > 3 %}
+                                                <div class="document-item">
+                                                    <div class="text-xs text-gray-600 mb-1">
+                                                        {% if doc.bm25_score %}
+                                                        BM25: <span class="text-primary">{{ doc.bm25_score|floatformat:3
+                                                            }}</span>
+                                                        {% endif %}
+                                                        {% if doc.rerank_score %}
+                                                        | Rerank: <span class="text-primary">{{
+                                                            doc.rerank_score|floatformat:3 }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="text-sm">
+                                                        <span
+                                                            class="cursor-help hover:bg-gray-100 p-1 rounded transition-colors"
+                                                            title="{{ doc.doc_text }}"
+                                                            onclick="showFullText('{{ doc.doc_text|escapejs }}', '{{ doc.doc_id }}')">
+                                                            {{ doc.doc_text|truncatewords:20 }}
+                                                            {% if doc.doc_text|wordcount > 20 %}
+                                                            <i
+                                                                class="fas fa-expand-arrows-alt ml-1 text-primary text-xs"></i>
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-gray-400">No documents</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                {% endif %}
+
+                                <!-- Job outputs -->
+                                {% for job in jobs %}
+                                <td class="job-output">
+                                    {% with sample_result=job|get_sample_result:sample_idx %}
+                                    {% if sample_result %}
+                                    {% if sample_result.prediction %}
+                                    <div class="mb-2">
+                                        {% if task_type == 'text-retrieval' %}
+                                        <!-- For text-retrieval, show prediction scores as formatted list -->
+                                        <div class="font-medium text-gray-700 mb-2">Predictions:</div>
+                                        <div class="space-y-1">
+                                            {% for score in sample_result.prediction|slice_scores:8 %}
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span>Doc #{{ forloop.counter0 }}</span>
+                                                <span class="font-mono">{{ score|format_score }}</span>
+                                            </div>
+                                            {% endfor %}
+                                            {% if sample_result.prediction|length > 8 %}
+                                            <div class="text-gray-500 text-xs">
+                                                +{{ sample_result.prediction|length|add:"-8" }} more...
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% elif task_type == 'text-summarization' or task_type == 'text-simplification'
+                                        %}
+                                        <!-- For text generation tasks, show the generated text -->
+                                        <div class="text-xs font-medium text-gray-600 mb-1">PREDICTION</div>
+                                        <div class="text-sm">
+                                            <div id="prediction-content-{{ forloop.parentloop.counter }}-{{ forloop.counter0 }}"
+                                                class="prediction-content">
+                                                {{ sample_result.prediction|truncate_text:400 }}
+                                            </div>
+                                            <button
+                                                id="prediction-toggle-{{ forloop.parentloop.counter }}-{{ forloop.counter0 }}"
+                                                class="prediction-toggle-btn text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none hidden"
+                                                onclick="togglePredictionText({{ forloop.parentloop.counter }}, {{ forloop.counter0 }}, '{{ sample_result.prediction|escapejs }}')">
+                                                Show more
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <!-- Generic output display -->
+                                        <div class="text-xs font-medium text-gray-600 mb-1">PREDICTION</div>
+                                        <div class="text-sm">
+                                            {% if sample_result.prediction|length == 1 %}
+                                            <div id="prediction-content-{{ forloop.parentloop.counter }}-{{ forloop.counter0 }}"
+                                                class="prediction-content">
+                                                {{ sample_result.prediction.0 }}
+                                            </div>
+                                            <button
+                                                id="prediction-toggle-{{ forloop.parentloop.counter }}-{{ forloop.counter0 }}"
+                                                class="prediction-toggle-btn text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none hidden"
+                                                onclick="togglePredictionText({{ forloop.parentloop.counter }}, {{ forloop.counter0 }}, '{{ sample_result.prediction.0|escapejs }}')">
+                                                Show more
+                                            </button>
+                                            {% else %}
+                                            <div id="prediction-content-{{ forloop.parentloop.counter }}-{{ forloop.counter0 }}"
+                                                class="prediction-content">
+                                                {{ sample_result.prediction|truncate_text:400 }}
+                                            </div>
+                                            <button
+                                                id="prediction-toggle-{{ forloop.parentloop.counter }}-{{ forloop.counter0 }}"
+                                                class="prediction-toggle-btn text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none hidden"
+                                                onclick="togglePredictionText({{ forloop.parentloop.counter }}, {{ forloop.counter0 }}, '{{ sample_result.prediction|truncate_text:400|escapejs }}')">
+                                                Show more
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    {% if sample_result.metrics %}
+                                    <div class="mt-2 pt-2 border-t border-gray-200">
+                                        <div class="text-xs font-medium text-gray-600 mb-1">METRICS</div>
+                                        {% for metric_name, metric_value in sample_result.metrics.items %}
+                                        {% if metric_name|lower == 'median_rank_correct_word' or metric_name|lower ==
+                                        'translation_length' or metric_name|lower == 'reference_length' %}
+                                        {# Display raw value metrics without normalization #}
+                                        {% with raw_value=metric_value|normalize_metric_value %}
+                                        {% if raw_value is not None %}
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-xs text-gray-600 uppercase">{{ metric_name }}</span>
+                                            <span class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-700"
+                                                title="Raw value: {{ raw_value|floatformat:0 }}">
+                                                {{ raw_value|floatformat:0 }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        {% endwith %}
+                                        {% else %}
+                                        {# Display normalized metrics with color coding #}
+                                        {% with normalized_value=metric_value|normalize_metric_for_display:metric_name
+                                        %}
+                                        {% if normalized_value is not None %}
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-xs text-gray-600 uppercase">{{ metric_name }}</span>
+                                            <span
+                                                class="metric-value text-xs px-2 py-1 rounded {{ normalized_value|dynamic_metric_class:metric_thresholds }}"
+                                                style="background-color: {{ normalized_value|dynamic_metric_color:metric_thresholds }};"
+                                                title="Original value: {{ metric_value|normalize_metric_value|floatformat:3 }} | Normalized: {{ normalized_value|floatformat:3 }}">
+                                                {{ normalized_value|floatformat:3 }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        {% endwith %}
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-gray-400">No result</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                {% endfor %}
+
+                                <!-- Reference -->
+                                <td class="job-output">
+                                    {% with sample_result=jobs.0|get_sample_result:sample_idx %}
+                                    {% if sample_result.reference %}
+                                    <div class="text-sm">
+                                        {% if task_type == 'text-retrieval' %}
+                                        <!-- For text-retrieval, show reference relevance with color coding -->
+                                        <div class="font-medium text-gray-700 mb-2">Relevance:</div>
+                                        <div class="space-y-1">
+                                            {% for rel in sample_result.reference|slice_scores:8 %}
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span>Doc #{{ forloop.counter0 }}</span>
+                                                <span
+                                                    class="font-mono {% if rel|is_relevant %}text-green-600{% else %}text-gray-400{% endif %}">
+                                                    {{ rel }}
+                                                </span>
+                                            </div>
+                                            {% endfor %}
+                                            {% if sample_result.reference|length > 8 %}
+                                            <div class="text-gray-500 text-xs">
+                                                +{{ sample_result.reference|length|add:"-8" }} more...
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <!-- For other tasks, show reference text -->
+                                        {% if sample_result.reference|length > 1 %}
+                                        <div id="reference-content-{{ forloop.counter }}" class="reference-content">
+                                            [{{ sample_result.reference|join:", " }}]
+                                        </div>
+                                        <button id="reference-toggle-{{ forloop.counter }}"
+                                            class="reference-toggle-btn text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none hidden"
+                                            onclick="toggleReferenceText({{ forloop.counter }}, '[{{ sample_result.reference|join:"
+                                            , "|escapejs }}]')">
+                                            Show more
+                                        </button>
+                                        {% else %}
+                                        <div id="reference-content-{{ forloop.counter }}" class="reference-content">
+                                            {{ sample_result.reference.0 }}
+                                        </div>
+                                        <button id="reference-toggle-{{ forloop.counter }}"
+                                            class="reference-toggle-btn text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none hidden"
+                                            onclick="toggleReferenceText({{ forloop.counter }}, '{{ sample_result.reference.0|escapejs }}')">
+                                            Show more
+                                        </button>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-gray-400">—</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+
+                                <!-- Tags -->
+                                <td class="job-output">
+                                    <div class="space-y-2">
+                                        {% for job in jobs %}
+                                        {% if job.tags %}
+                                        <div class="text-xs">
+                                            <div class="font-medium text-gray-600 mb-1">Job #{{ job.id|short_id }}</div>
+                                            <div class="flex flex-wrap gap-1">
+                                                {% for tag in job.tags %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                                    {% if tag.category == 'Symptom' %}bg-red-100 text-red-800
+                                                                    {% elif tag.category == 'Sign' %}bg-orange-100 text-orange-800
+                                                                    {% elif tag.category == 'Failure Pattern' %}bg-purple-100 text-purple-800
+                                                                    {% else %}bg-gray-100 text-gray-800{% endif %}"
+                                                    title="{{ tag.description }}">
+                                                    {% if tag.category == 'Symptom' %}
+                                                    <i class="fas fa-exclamation-triangle mr-1 text-xs"></i>
+                                                    {% elif tag.category == 'Sign' %}
+                                                    <i class="fas fa-search mr-1 text-xs"></i>
+                                                    {% elif tag.category == 'Failure Pattern' %}
+                                                    <i class="fas fa-chart-line mr-1 text-xs"></i>
+                                                    {% else %}
+                                                    <i class="fas fa-tag mr-1 text-xs"></i>
+                                                    {% endif %}
+                                                    {{ tag.name }}
+                                                </span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% if not jobs|jobs_have_tags %}
+                                        <span class="text-gray-400 text-xs">No tags</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <!-- Diagnostics (excluding SHAP/LXT) -->
+                                <td class="job-output">
+                                    <div class="space-y-2">
+                                        {% for job in jobs %}
+                                        {% if job.result.diagnostics %}
+                                        <div class="text-xs">
+                                            <div class="font-medium text-gray-600 mb-1">Job #{{ job.id|short_id }}</div>
+                                            <div class="space-y-2">
+                                                {% for diagnostic_name, diagnostic_data in job.result.diagnostics.items
+                                                %}
+                                                {% if diagnostic_name != 'shap' and diagnostic_name != 'lxt' and
+                                                diagnostic_name != 'shap_encoder' and diagnostic_name !=
+                                                'integrated_gradients_encoder' %}
+                                                <div class="border border-gray-200 rounded p-2">
+                                                    <div class="flex items-center mb-1">
+                                                        <span
+                                                            class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                                            {{ diagnostic_name|upper }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {% if diagnostic_data|get_type == 'list' %}
+                                                            Token ({{ diagnostic_data|length }})
+                                                            {% else %}
+                                                            Report
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                    {% if diagnostic_data|get_type == 'list' %}
+                                                    {% if diagnostic_data and sample_idx < diagnostic_data|length %}
+                                                        <div class="font-mono text-xs"
+                                                        style="max-height: 100px; overflow-y: auto;">
+                                                        {% with diagnostic_data|get_item:sample_idx as token_data %}
+                                                        {% if token_data %}
+                                                        {% for token, score in token_data.items|slice:":20" %}
+                                                        <span class="inline-block px-1 py-0.5 m-0.5 rounded text-xs"
+                                                            style="background-color: {{ score|lxt_token_color }}; color: {{ score|lxt_text_color }};"
+                                                            title="Score: {{ score|floatformat:4 }}">{{ token }}</span>
+                                                        {% endfor %}
+                                                        {% if token_data.items|length > 20 %}
+                                                        <span class="text-gray-500">...</span>
+                                                        {% endif %}
+                                                        {% else %}
+                                                        <span class="text-gray-400">No data for sample</span>
+                                                        {% endif %}
+                                                        {% endwith %}
+                                                </div>
+                                                {% else %}
+                                                <span class="text-gray-400 text-xs">No sample data</span>
+                                                {% endif %}
+                                                {% else %}
+                                                <div class="text-xs text-gray-600 font-mono"
+                                                    style="max-height: 80px; overflow-y: auto;">
+                                                    {{ diagnostic_data|truncatechars:200 }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% if jobs|jobs_have_shap_encoder_or_ig %}
+                                    {# For text-retrieval, reference encoder diagnostic sections #}
+                                    <div class="text-xs text-gray-500 mt-2 italic">
+                                        <i class="fas fa-info-circle mr-1"></i>See
+                                        {% if jobs|jobs_have_shap_encoder %}SHAP Encoder{% endif %}{% if
+                                        jobs|jobs_have_shap_encoder and jobs|jobs_have_ig %}/{% endif %}{% if
+                                        jobs|jobs_have_ig %}Integrated Gradients{% endif %}
+                                        section{% if jobs|jobs_have_shap_encoder and jobs|jobs_have_ig %}s{% endif %}
+                                        below
+                                    </div>
+                                    {% elif jobs|jobs_have_shap_or_lxt %}
+                                    {# For other task types, reference regular SHAP/LXT sections #}
+                                    <div class="text-xs text-gray-500 mt-2 italic">
+                                        <i class="fas fa-info-circle mr-1"></i>See
+                                        {% if jobs|jobs_have_shap %}SHAP{% endif %}{% if jobs|jobs_have_shap and
+                                        jobs|jobs_have_lxt %}/{% endif %}{% if jobs|jobs_have_lxt %}LXT{% endif %}
+                                        section{% if jobs|jobs_have_shap and jobs|jobs_have_lxt %}s{% endif %} below
+                                    </div>
+                                    {% else %}
+                                    {% if not jobs|any_jobs_have_diagnostics %}
+                                    <div class="text-xs text-gray-400 italic">
+                                        <i class="fas fa-info-circle mr-1"></i>No diagnostics available
+                                    </div>
+                                    {% endif %}
+                                    {% endif %}
+                </div>
+                </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHAP Comparison Section -->
+    <div class="bg-white rounded-lg shadow-lg mb-8" id="shap-comparison-section">
+        <div class="bg-purple-600 px-6 py-4 rounded-t-lg text-white">
+            <h2 class="text-xl font-bold">
+                <i class="fas fa-project-diagram mr-2"></i>SHAP Attribution Comparison
+            </h2>
+            <p class="text-sm mt-1 opacity-90">Interactive token-level attribution analysis across jobs (hover over
+                output tokens, click to lock)</p>
+        </div>
+        <div class="p-6">
+            <!-- Sample Navigation -->
+            <div class="mb-6 flex items-center justify-center">
+                <div class="inline-flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-lg">
+                    <button onclick="navigateSHAPSample(-1)" id="shap-prev-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="text-gray-700 font-medium px-2" id="shap-sample-counter">
+                        Sample 1 of 1
+                    </div>
+                    <button onclick="navigateSHAPSample(1)" id="shap-next-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="shap-samples-container">
+                <!-- SHAP visualizations will be dynamically populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- LXT Comparison Section -->
+    <div class="bg-white rounded-lg shadow-lg mb-8" id="lxt-comparison-section">
+        <div class="bg-purple-600 px-6 py-4 rounded-t-lg text-white">
+            <h2 class="text-xl font-bold">
+                <i class="fas fa-link mr-2"></i>LXT Relevance Comparison
+            </h2>
+            <p class="text-sm mt-1 opacity-90">Interactive token relevance analysis across jobs (hover over output
+                tokens, click to lock)</p>
+        </div>
+        <div class="p-6">
+            <!-- Sample Navigation -->
+            <div class="mb-6 flex items-center justify-center">
+                <div class="inline-flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-lg">
+                    <button onclick="navigateLXTSample(-1)" id="lxt-prev-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="text-gray-700 font-medium px-2" id="lxt-sample-counter">
+                        Sample 1 of 1
+                    </div>
+                    <button onclick="navigateLXTSample(1)" id="lxt-next-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="lxt-samples-container">
+                <!-- LXT visualizations will be dynamically populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SHAP Encoder Comparison Section -->
+    <div class="bg-white rounded-lg shadow-lg mb-8" id="shap-encoder-comparison-section">
+        <div class="bg-teal-600 px-6 py-4 rounded-t-lg text-white">
+            <h2 class="text-xl font-bold">
+                <i class="fas fa-search-location mr-2"></i>SHAP Attribution Comparison
+            </h2>
+            <p class="text-sm mt-1 opacity-90">Query-document token attributions for re-ranking models across jobs</p>
+        </div>
+        <div class="p-6">
+            <!-- Query Navigation -->
+            <div class="mb-4 flex items-center justify-center">
+                <div class="inline-flex items-center gap-3 bg-teal-50 px-4 py-2 rounded-lg border border-teal-200">
+                    <button onclick="navigateSHAPEncoderQuery(-1)" id="shap-encoder-prev-query-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-teal-50 text-teal-700 rounded border border-teal-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-left mr-1"></i>Previous Query
+                    </button>
+                    <div class="text-teal-700 font-medium px-2" id="shap-encoder-query-counter">
+                        Query 1 of 1
+                    </div>
+                    <button onclick="navigateSHAPEncoderQuery(1)" id="shap-encoder-next-query-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-teal-50 text-teal-700 rounded border border-teal-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Next Query<i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Document Navigation -->
+            <div class="mb-6 flex items-center justify-center">
+                <div class="inline-flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200">
+                    <button onclick="navigateSHAPEncoderDocument(-1)" id="shap-encoder-prev-doc-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 rounded border border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-left mr-1"></i>Previous Document
+                    </button>
+                    <div class="text-indigo-700 font-medium px-2" id="shap-encoder-doc-counter">
+                        Document 1 of 1
+                    </div>
+                    <button onclick="navigateSHAPEncoderDocument(1)" id="shap-encoder-next-doc-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 rounded border border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Next Document<i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Context Panel and Jobs Container -->
+            <div id="shap-encoder-context-panel"></div>
+            <div id="shap-encoder-jobs-container"></div>
+        </div>
+    </div>
+
+    <!-- IG Encoder Comparison Section -->
+    <div class="bg-white rounded-lg shadow-lg mb-8" id="ig-encoder-comparison-section">
+        <div class="bg-purple-600 px-6 py-4 rounded-t-lg text-white">
+            <h2 class="text-xl font-bold">
+                <i class="fas fa-chart-line mr-2"></i>Integrated Gradients Attribution Comparison
+            </h2>
+            <p class="text-sm mt-1 opacity-90">Query-document token attributions with convergence metrics for re-ranking
+                models across jobs</p>
+        </div>
+        <div class="p-6">
+            <!-- Query Navigation -->
+            <div class="mb-4 flex items-center justify-center">
+                <div class="inline-flex items-center gap-3 bg-purple-50 px-4 py-2 rounded-lg border border-purple-200">
+                    <button onclick="navigateIGEncoderQuery(-1)" id="ig-encoder-prev-query-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-700 rounded border border-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-left mr-1"></i>Previous Query
+                    </button>
+                    <div class="text-purple-700 font-medium px-2" id="ig-encoder-query-counter">
+                        Query 1 of 1
+                    </div>
+                    <button onclick="navigateIGEncoderQuery(1)" id="ig-encoder-next-query-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-700 rounded border border-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Next Query<i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Document Navigation -->
+            <div class="mb-6 flex items-center justify-center">
+                <div class="inline-flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200">
+                    <button onclick="navigateIGEncoderDocument(-1)" id="ig-encoder-prev-doc-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 rounded border border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <i class="fas fa-chevron-left mr-1"></i>Previous Document
+                    </button>
+                    <div class="text-indigo-700 font-medium px-2" id="ig-encoder-doc-counter">
+                        Document 1 of 1
+                    </div>
+                    <button onclick="navigateIGEncoderDocument(1)" id="ig-encoder-next-doc-btn"
+                        class="px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 rounded border border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Next Document<i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Context Panel and Jobs Container -->
+            <div id="ig-encoder-context-panel"></div>
+            <div id="ig-encoder-jobs-container"></div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics Summary -->
+    {% if jobs.0.result.summary %}
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="bg-primary px-6 py-4 rounded-t-lg text-white">
+            <h2 class="text-xl font-bold">
+                <i class="fas fa-chart-bar mr-2"></i>Performance Metrics Summary
+            </h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {% for job in jobs %}
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-4">Job #{{ job.id|short_id }}</h3>
+                    {% if job.result.summary %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for metric_name, metric_data in job.result.summary.items %}
+                        {% if metric_data.mean is not None %}
+                        {% with normalized_mean=metric_data.mean|normalize_metric_for_display:metric_name %}
+                        {% with normalized_min=metric_data.min|normalize_metric_for_display:metric_name %}
+                        {% with normalized_max=metric_data.max|normalize_metric_for_display:metric_name %}
+                        {% with normalized_std=metric_data.std|normalize_metric_for_display:metric_name %}
+                        <div class="border border-gray-100 rounded p-3">
+                            <div class="mb-2">
+                                <div class="text-xs font-medium text-gray-700 uppercase break-words mb-1"
+                                    title="{{ metric_name }}">{{ metric_name }}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-600">Mean:</span>
+                                    <span
+                                        class="metric-value text-xs px-2 py-1 rounded {{ normalized_mean|dynamic_metric_class:metric_thresholds }}"
+                                        style="background-color: {{ normalized_mean|dynamic_metric_color:metric_thresholds }};"
+                                        title="Original mean: {{ metric_data.mean|floatformat:3 }} | Normalized: {{ normalized_mean|floatformat:3 }}">
+                                        {{ normalized_mean|floatformat:3 }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                <div
+                                    title="Min: {{ normalized_min|floatformat:3 }} (Original: {{ metric_data.min|floatformat:3 }})">
+                                    Min: <span
+                                        style="color: {{ normalized_min|dynamic_metric_color:metric_thresholds }};">{{
+                                        normalized_min|floatformat:3 }}</span></div>
+                                <div
+                                    title="Max: {{ normalized_max|floatformat:3 }} (Original: {{ metric_data.max|floatformat:3 }})">
+                                    Max: <span
+                                        style="color: {{ normalized_max|dynamic_metric_color:metric_thresholds }};">{{
+                                        normalized_max|floatformat:3 }}</span></div>
+                                <div
+                                    title="Std: {{ normalized_std|floatformat:3 }} (Original: {{ metric_data.std|floatformat:3 }})">
+                                    Std: {{ normalized_std|floatformat:3 }}</div>
+                                <div title="Count: {{ metric_data.count }}">Count: {{ metric_data.count }}</div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    </div>
+
+    <!-- Modal for showing full document text -->
+    <div id="documentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg max-w-4xl max-h-[80vh] m-4 flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b">
+                <h3 class="text-lg font-semibold">Document Text</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <div class="mb-2 text-sm text-gray-600">
+                    Document #<span id="modalDocId"></span>
+                </div>
+                <div id="modalDocText" class="text-sm leading-relaxed whitespace-pre-wrap"></div>
+            </div>
+            <div class="p-4 border-t bg-gray-50 rounded-b-lg">
+                <button onclick="closeModal()"
+                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-800 text-white py-6 mt-12">
+        <div class="max-w-full mx-auto px-6 lg:px-12 xl:px-16 text-center">
+            <p class="text-sm">
+                Generated by MIRA Diagnosis Toolkit on {{ generated_at|date:"F d, Y \a\t H:i" }}
+            </p>
+        </div>
+    </div>
+
+    <!-- JavaScript for expandable documents -->
+    <script>
+        // Chart Data and Configuration
+        const chartData = {
+            jobs: {{ jobs_json| safe }},
+        taskType: '{{ task_type }}',
+            jobIds: { { job_ids_json | safe } },
+        maxSamples: { { max_samples } }
+        };
+
+        // Chart Colors
+        const chartColors = {
+            primary: '#8b5cf6',
+            secondary: '#10b981',
+            accent: '#f59e0b',
+            danger: '#ef4444',
+            info: '#3b82f6',
+            success: '#22c55e',
+            warning: '#f97316'
+        };
+
+        // Metric normalization functions
+        function getMetricRange(metricName) {
+            const metricRanges = {
+                // Readability metrics (0-100 or 0-20 scale)
+                'flesch_kincaid': [0, 100],
+                'flesch': [0, 100],
+                'flesch_reading_ease': [0, 100],
+                'gunning_fog': [0, 20],
+                'coleman_liau': [0, 20],
+                'dale_chall': [0, 10],
+                'ari': [0, 20],
+                'linsear_write': [0, 20],
+                'smog': [0, 20],
+                'spache': [0, 10],
+                // Text simplification/generation metrics
+                'sari': [0, 100],
+                // Rank metrics (higher rank = worse)
+                'median_rank_correct_word': [0, 50000],
+                // HARIM+ can be negative (typically -10 to 10)
+                'harim_': [-10, 10],
+                'harim_plus': [-10, 10],
+                // Perplexity (lower is better, typical range 0-1000)
+                'perplexity': [0, 1000],
+            };
+
+            const normalizedName = metricName.toLowerCase().replace(/[^a-z_]/g, '_');
+            return metricRanges[normalizedName] || [0, 1];
+        }
+
+        function normalizeMetricValue(value, metricName) {
+            if (value === null || value === undefined) return null;
+
+            const [min, max] = getMetricRange(metricName);
+
+            // Special handling for metrics where lower is better
+            const lowerIsBetter = ['median_rank_correct_word', 'perplexity'];
+
+            const normalizedName = metricName.toLowerCase().replace(/[^a-z_]/g, '_');
+
+            if (lowerIsBetter.includes(normalizedName)) {
+                // For "lower is better" metrics, invert the scale so higher normalized values = better performance
+                const clampedValue = Math.max(min, Math.min(max, value));
+                return 1 - ((clampedValue - min) / (max - min));
+            } else if (normalizedName === 'flesch_reading_ease' || normalizedName === 'flesch_kincaid' ||
+                normalizedName === 'flesch' || normalizedName === 'sari') {
+                // Metrics on 0-100 scale where higher is better
+                return Math.max(0, Math.min(100, value)) / 100;
+            } else if (normalizedName === 'harim_' || normalizedName === 'harim_plus') {
+                // HARIM+ can be negative; normalize to 0-1 where higher (closer to 10) is better
+                const clampedValue = Math.max(min, Math.min(max, value));
+                return (clampedValue - min) / (max - min);
+            } else {
+                // For metrics already on 0-1 scale or where higher is better
+                const clampedValue = Math.max(min, Math.min(max, value));
+                return (clampedValue - min) / (max - min);
+            }
+        }
+
+        // Initialize Charts and Diagnostic Visualizations
+        document.addEventListener('DOMContentLoaded', function () {
+            initMetricComparisonChart();
+            initRuntimeChart();
+
+            // Conditionally initialize diagnostics based on task type
+            if (chartData.taskType === 'text-retrieval') {
+                // Show encoder diagnostics for text-retrieval
+                initSHAPEncoderVisualizations();
+                initIGEncoderVisualizations();
+
+                // Hide SHAP/LXT sections
+                document.getElementById('shap-comparison-section').style.display = 'none';
+                document.getElementById('lxt-comparison-section').style.display = 'none';
+            } else {
+                // Show SHAP/LXT for other task types
+                initSHAPVisualizations();
+                initLXTVisualizations();
+
+                // Hide encoder diagnostics
+                document.getElementById('shap-encoder-comparison-section').style.display = 'none';
+                document.getElementById('ig-encoder-comparison-section').style.display = 'none';
+            }
+        });
+
+        // Matplotlib colormap implementation (RdBu_r)
+        function generateMatplotlibColorMap(scores, colormapName = 'RdBu_r') {
+            if (!scores || scores.length === 0) return {};
+
+            const maxAbsScore = Math.max(...scores.map(Math.abs));
+            if (maxAbsScore === 0) return {};
+
+            const colorMap = {};
+
+            for (const score of scores) {
+                const isPositive = score >= 0;
+                const magnitude = Math.abs(score) / maxAbsScore;
+                const color = getMatplotlibColorByMagnitude(magnitude, isPositive, colormapName);
+                colorMap[score] = color;
+            }
+
+            return colorMap;
+        }
+
+        function getMatplotlibColorByMagnitude(magnitude, isPositive, colormapName) {
+            const clampedMagnitude = Math.max(0, Math.min(1, magnitude));
+            let t;
+
+            if (colormapName === 'RdBu_r') {
+                if (isPositive) {
+                    t = 0.5 + (clampedMagnitude * 0.5);
+                } else {
+                    t = 0.5 - (clampedMagnitude * 0.5);
+                }
+            } else {
+                t = clampedMagnitude;
+            }
+
+            return getMatplotlibColor(t, colormapName);
+        }
+
+        function getMatplotlibColor(normalizedValue, colormapName) {
+            const t = Math.max(0, Math.min(1, normalizedValue));
+
+            if (colormapName === 'RdBu_r') {
+                return interpolateRdBu_r(t);
+            }
+            return 'rgb(128, 128, 128)';
+        }
+
+        function interpolateRdBu_r(t) {
+            // RdBu_r colormap: Red (low) -> White (middle) -> Blue (high)
+            // Made more subtle with lighter colors and wider neutral zone
+            if (t < 0.35) {
+                // Strong negative: light red to very light red
+                const localT = t / 0.35; // Map [0, 0.35] to [0, 1]
+                const r = Math.round(239 + (252 - 239) * localT);
+                const g = Math.round(138 + (220 - 138) * localT);
+                const b = Math.round(138 + (220 - 138) * localT);
+                return `rgb(${r}, ${g}, ${b})`;
+            } else if (t < 0.5) {
+                // Weak negative: very light red to white
+                const localT = (t - 0.35) / 0.15; // Map [0.35, 0.5] to [0, 1]
+                const r = Math.round(252 + (255 - 252) * localT);
+                const g = Math.round(220 + (255 - 220) * localT);
+                const b = Math.round(220 + (255 - 220) * localT);
+                return `rgb(${r}, ${g}, ${b})`;
+            } else if (t < 0.65) {
+                // Weak positive: white to very light blue
+                const localT = (t - 0.5) / 0.15; // Map [0.5, 0.65] to [0, 1]
+                const r = Math.round(255 - (255 - 220) * localT);
+                const g = Math.round(255 - (255 - 230) * localT);
+                const b = Math.round(255 - (255 - 252) * localT);
+                return `rgb(${r}, ${g}, ${b})`;
+            } else {
+                // Strong positive: very light blue to light blue
+                const localT = (t - 0.65) / 0.35; // Map [0.65, 1] to [0, 1]
+                const r = Math.round(220 - (220 - 158) * localT);
+                const g = Math.round(230 - (230 - 188) * localT);
+                const b = Math.round(252 - (252 - 235) * localT);
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+        }
+
+        function getContrastTextColor(backgroundColor) {
+            const rgb = backgroundColor.match(/\d+/g);
+            if (!rgb) return '#000000';
+            const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+            return brightness > 155 ? '#000000' : '#ffffff';
+        }
+
+        function initMetricComparisonChart() {
+            const metricCtx = document.getElementById('metricComparisonChart');
+            if (metricCtx) {
+                const jobLabels = chartData.jobs.map(job => `Job #${job.id.substring(0, 8)}`);
+
+                // Find all available metrics across all jobs
+                const allMetrics = new Set();
+                chartData.jobs.forEach(job => {
+                    if (job.result && job.result.summary) {
+                        Object.keys(job.result.summary).forEach(metric => {
+                            if (job.result.summary[metric] && job.result.summary[metric].mean !== undefined) {
+                                allMetrics.add(metric);
+                            }
+                        });
+                    }
+                });
+
+                // Metrics to exclude from the chart
+                const excludedMetrics = ['translation_length', 'median_rank_correct_word'];
+
+                // Convert to array, filter out excluded metrics, and sort for consistent ordering
+                const metricsToShow = Array.from(allMetrics)
+                    .filter(metric => {
+                        const normalizedName = metric.toLowerCase().replace(/[^a-z_]/g, '_');
+                        return !excludedMetrics.includes(normalizedName);
+                    })
+                    .sort();
+                const datasets = [];
+
+                // Create a dataset for each metric
+                metricsToShow.forEach((metric, index) => {
+                    const originalData = chartData.jobs.map(job => {
+                        return job.result && job.result.summary && job.result.summary[metric] ?
+                            job.result.summary[metric].mean : null;
+                    });
+
+                    // Normalize the data for chart display
+                    const normalizedData = originalData.map(value => normalizeMetricValue(value, metric));
+
+                    // Only add dataset if at least one job has this metric
+                    if (normalizedData.some(value => value !== null)) {
+                        datasets.push({
+                            label: metric.toUpperCase(),
+                            data: normalizedData,
+                            originalData: originalData, // Store original values for tooltip
+                            backgroundColor: Object.values(chartColors)[index % Object.keys(chartColors).length],
+                            borderColor: Object.values(chartColors)[index % Object.keys(chartColors).length],
+                            borderWidth: 2
+                        });
+                    }
+                });
+
+                if (datasets.length > 0) {
+                    new Chart(metricCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: jobLabels,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Performance Metrics by Job'
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const originalValue = context.dataset.originalData[context.dataIndex];
+                                            const normalizedValue = context.parsed.y;
+                                            if (originalValue !== null && normalizedValue !== null) {
+                                                return `${context.dataset.label}: ${originalValue.toFixed(3)} (normalized: ${normalizedValue.toFixed(3)})`;
+                                            }
+                                            return `${context.dataset.label}: N/A`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 1,
+                                    title: {
+                                        display: true,
+                                        text: 'Normalized Score (0-1)'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Jobs'
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    });
+                } else {
+                    metricCtx.parentElement.innerHTML = '<div class="text-center text-gray-500 py-8">No metric data available for comparison</div>';
+                }
+            }
+        }
+
+        function initRuntimeChart() {
+            const runtimeCtx = document.getElementById('runtimeComparisonChart');
+            if (runtimeCtx) {
+                const runtimeData = chartData.jobs.map(job => ({
+                    job: `Job #${job.id.substring(0, 8)}`,
+                    runtime: job.runtime || 0,
+                    type: job.type || 'UNKNOWN'
+                }));
+
+                if (runtimeData.length > 0) {
+                    new Chart(runtimeCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: runtimeData.map(d => d.job),
+                            datasets: [{
+                                label: 'Runtime (seconds)',
+                                data: runtimeData.map(d => d.runtime),
+                                backgroundColor: runtimeData.map(d => d.type === 'FULL' ? chartColors.primary : chartColors.accent),
+                                borderColor: runtimeData.map(d => d.type === 'FULL' ? chartColors.primary : chartColors.accent),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Job Runtime Comparison'
+                                },
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const job = runtimeData[context.dataIndex];
+                                            return `${job.type} Job: ${job.runtime.toFixed(2)}s`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Runtime (seconds)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    runtimeCtx.parentElement.innerHTML = '<div class="text-center text-gray-500 py-8">No runtime data available</div>';
+                }
+            }
+        }
+
+        // Initialize SHAP Visualizations
+        let currentSHAPSampleIndex = 0;
+
+        function initSHAPVisualizations() {
+            const container = document.getElementById('shap-samples-container');
+            if (!container) return;
+
+            // Check if any job has SHAP diagnostics
+            const hasSHAP = chartData.jobs.some(job =>
+                job.result && job.result.diagnostics && job.result.diagnostics.shap
+            );
+
+            if (!hasSHAP) {
+                document.getElementById('shap-comparison-section').style.display = 'none';
+                return;
+            }
+
+            currentSHAPSampleIndex = 0;
+            renderSHAPSample(0);
+            updateSHAPNavigation();
+        }
+
+        function navigateSHAPSample(direction) {
+            const newIndex = currentSHAPSampleIndex + direction;
+            if (newIndex >= 0 && newIndex < chartData.maxSamples) {
+                currentSHAPSampleIndex = newIndex;
+                renderSHAPSample(currentSHAPSampleIndex);
+                updateSHAPNavigation();
+            }
+        }
+
+        function updateSHAPNavigation() {
+            const counter = document.getElementById('shap-sample-counter');
+            const prevBtn = document.getElementById('shap-prev-btn');
+            const nextBtn = document.getElementById('shap-next-btn');
+
+            if (counter) {
+                counter.textContent = `Sample ${currentSHAPSampleIndex + 1} of ${chartData.maxSamples}`;
+            }
+
+            if (prevBtn) {
+                prevBtn.disabled = currentSHAPSampleIndex === 0;
+            }
+
+            if (nextBtn) {
+                nextBtn.disabled = currentSHAPSampleIndex === chartData.maxSamples - 1;
+            }
+        }
+
+        function renderSHAPSample(sampleIdx) {
+            const container = document.getElementById('shap-samples-container');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-${Math.min(chartData.jobs.length, 3)} gap-4" id="shap-sample-${sampleIdx}"></div>
+            `;
+
+            // Render SHAP for each job (always render all jobs, pass null if no data)
+            chartData.jobs.forEach((job, jobIdx) => {
+                const shapData = job.result?.diagnostics?.shap;
+                const sampleData = shapData && shapData[sampleIdx] ? shapData[sampleIdx] : null;
+                renderSHAPForJob(sampleIdx, jobIdx, job, sampleData);
+            });
+        }
+
+        function renderSHAPForJob(sampleIdx, jobIdx, job, sampleData) {
+            const jobContainer = document.getElementById(`shap-sample-${sampleIdx}`);
+            if (!jobContainer) return;
+
+            // Check if this job has data for this sample
+            if (!sampleData || !sampleData.attribution_matrix || sampleData.attribution_matrix.length === 0) {
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.className = 'diagnostic-job-container';
+                placeholderDiv.innerHTML = `
+                    <h4 class="font-medium text-gray-800 mb-3">
+                        Job #${job.id.substring(0, 8)}
+                        <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                    </h4>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                        <i class="fas fa-info-circle text-gray-400 text-3xl mb-2"></i>
+                        <p class="text-gray-500 text-sm">No SHAP data available for this sample</p>
+                    </div>
+                `;
+                jobContainer.appendChild(placeholderDiv);
+                return;
+            }
+
+            const attributionMatrix = sampleData.attribution_matrix || [];
+            const outputTokens = attributionMatrix.map(item => item.output_token ?? item.generated_token).filter(t => t !== null && t !== undefined);
+            const inputTokens = attributionMatrix.length > 0 && attributionMatrix[0].input_attributions
+                ? attributionMatrix[0].input_attributions.map(([token, score]) => token).filter(t => t !== null && t !== undefined)
+                : [];
+
+            // Calculate average scores
+            const avgImportances = {};
+            attributionMatrix.forEach(item => {
+                const outputToken = item.output_token ?? item.generated_token;
+                if (outputToken !== undefined && outputToken !== null && item.input_attributions) {
+                    const scores = item.input_attributions.map(([token, score]) => score);
+                    const avg = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+                    avgImportances[outputToken] = avg;
+                }
+            });
+
+            const avgColorMap = generateMatplotlibColorMap(Object.values(avgImportances), 'RdBu_r');
+
+            const jobDiv = document.createElement('div');
+            jobDiv.className = 'diagnostic-job-container';
+            jobDiv.innerHTML = `
+                <h4 class="font-medium text-gray-800 mb-3">
+                    Job #${job.id.substring(0, 8)}
+                    <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                </h4>
+                
+                <!-- Input Tokens -->
+                <div class="mb-4">
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center">
+                        <i class="fas fa-file-text mr-1 text-blue-500"></i>
+                        Input Tokens
+                    </div>
+                    <div class="token-container" id="shap-input-${sampleIdx}-${jobIdx}"></div>
+                </div>
+                
+                <!-- Output Tokens -->
+                <div>
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center">
+                        <i class="fas fa-file-alt mr-1 text-green-500"></i>
+                        Output Tokens (hover/click)
+                    </div>
+                    <div class="token-container" id="shap-output-${sampleIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div class="diagnostic-tooltip" id="shap-tooltip-${sampleIdx}-${jobIdx}"></div>
+            `;
+
+            jobContainer.appendChild(jobDiv);
+
+            // Render input tokens
+            const inputContainer = document.getElementById(`shap-input-${sampleIdx}-${jobIdx}`);
+            inputTokens.forEach((token, idx) => {
+                const cleanToken = token.replace(/\\u2581/g, '').replace(/_/g, '').replace(/\u2581/g, '') || '(space)';
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token';
+                span.style.backgroundColor = '#f3f4f6';
+                span.style.color = '#374151';
+                span.textContent = cleanToken;
+                span.dataset.tokenIndex = idx;
+                span.dataset.currentScore = '0.0000';
+                console.log('[SHAP INPUT] Attaching listeners to token', idx, cleanToken, 'tooltipId:', `shap-tooltip-${sampleIdx}-${jobIdx}`);
+                span.addEventListener('mouseover', (e) => {
+                    console.log('[SHAP INPUT] Mouseover on token', idx, 'score:', span.dataset.currentScore);
+                    showTooltip(span, e, `shap-tooltip-${sampleIdx}-${jobIdx}`);
+                });
+                span.addEventListener('mouseout', () => hideTooltip(`shap-tooltip-${sampleIdx}-${jobIdx}`));
+                inputContainer.appendChild(span);
+            });
+
+            // Render output tokens
+            const outputContainer = document.getElementById(`shap-output-${sampleIdx}-${jobIdx}`);
+            let lockedToken = null;
+
+            outputTokens.forEach((token, idx) => {
+                const cleanToken = token.replace(/\\u2581/g, '').replace(/_/g, '').replace(/\u2581/g, '') || '(space)';
+                const avgScore = avgImportances[token];
+                const color = avgColorMap[avgScore] || '#f3f4f6';
+                const textColor = getContrastTextColor(color);
+
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token diagnostic-output-token';
+                span.style.backgroundColor = color;
+                span.style.color = textColor;
+                span.textContent = cleanToken;
+                span.dataset.tokenIndex = idx;
+                span.dataset.token = token;
+
+                span.addEventListener('mouseover', () => {
+                    if (lockedToken === null) {
+                        highlightSHAPAttributions(sampleIdx, jobIdx, idx, attributionMatrix, inputContainer, outputContainer, false);
+                    }
+                });
+
+                span.addEventListener('mouseout', () => {
+                    if (lockedToken === null) {
+                        clearSHAPHighlight(inputContainer, outputContainer);
+                    }
+                });
+
+                span.addEventListener('click', () => {
+                    if (lockedToken === idx) {
+                        lockedToken = null;
+                        span.classList.remove('locked');
+                        clearSHAPHighlight(inputContainer, outputContainer);
+                    } else {
+                        outputContainer.querySelectorAll('.diagnostic-output-token').forEach(el => el.classList.remove('locked'));
+                        lockedToken = idx;
+                        span.classList.add('locked');
+                        highlightSHAPAttributions(sampleIdx, jobIdx, idx, attributionMatrix, inputContainer, outputContainer, true);
+                    }
+                });
+
+                outputContainer.appendChild(span);
+            });
+        }
+
+        function highlightSHAPAttributions(sampleIdx, jobIdx, tokenIdx, attributionMatrix, inputContainer, outputContainer, isLocked) {
+            const attributionItem = attributionMatrix[tokenIdx];
+            if (!attributionItem) return;
+
+            const inputAttributions = attributionItem.input_attributions || [];
+            const allScores = inputAttributions.map(([token, score]) => score);
+            const colorMap = generateMatplotlibColorMap(allScores, 'RdBu_r');
+
+            const inputTokenElements = inputContainer.querySelectorAll('.diagnostic-token');
+            inputTokenElements.forEach((element, index) => {
+                if (index < inputAttributions.length) {
+                    const [token, score] = inputAttributions[index];
+                    const color = colorMap[score] || '#f3f4f6';
+                    const textColor = getContrastTextColor(color);
+                    element.style.backgroundColor = color;
+                    element.style.color = textColor;
+                    element.dataset.currentScore = score.toFixed(4);
+                }
+            });
+
+            const outputTokenElements = outputContainer.querySelectorAll('.diagnostic-output-token');
+            outputTokenElements.forEach((el, idx) => {
+                if (idx === tokenIdx) {
+                    el.style.transform = 'scale(1.05)';
+                    el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                } else {
+                    el.style.opacity = '0.5';
+                }
+            });
+        }
+
+        function clearSHAPHighlight(inputContainer, outputContainer) {
+            const inputTokenElements = inputContainer.querySelectorAll('.diagnostic-token');
+            inputTokenElements.forEach(element => {
+                element.style.backgroundColor = '#f3f4f6';
+                element.style.color = '#374151';
+                element.dataset.currentScore = '0.0000';
+            });
+
+            const outputTokenElements = outputContainer.querySelectorAll('.diagnostic-output-token');
+            outputTokenElements.forEach(el => {
+                el.style.transform = '';
+                el.style.boxShadow = '';
+                el.style.opacity = '1';
+            });
+        }
+
+        // Initialize LXT Visualizations
+        let currentLXTSampleIndex = 0;
+
+        // Initialize SHAP Encoder Visualizations
+        let currentSHAPEncoderQueryIndex = 0;
+        let currentSHAPEncoderDocIndex = 0;
+        let totalSHAPEncoderQueries = 0;
+        let totalSHAPEncoderDocs = 0;
+
+        // Initialize IG Encoder Visualizations
+        let currentIGEncoderQueryIndex = 0;
+        let currentIGEncoderDocIndex = 0;
+        let totalIGEncoderQueries = 0;
+        let totalIGEncoderDocs = 0;
+
+        function initLXTVisualizations() {
+            const container = document.getElementById('lxt-samples-container');
+            if (!container) return;
+
+            const hasLXT = chartData.jobs.some(job =>
+                job.result && job.result.diagnostics && job.result.diagnostics.lxt
+            );
+
+            if (!hasLXT) {
+                document.getElementById('lxt-comparison-section').style.display = 'none';
+                return;
+            }
+
+            currentLXTSampleIndex = 0;
+            renderLXTSample(0);
+            updateLXTNavigation();
+        }
+
+        function navigateLXTSample(direction) {
+            const newIndex = currentLXTSampleIndex + direction;
+            if (newIndex >= 0 && newIndex < chartData.maxSamples) {
+                currentLXTSampleIndex = newIndex;
+                renderLXTSample(currentLXTSampleIndex);
+                updateLXTNavigation();
+            }
+        }
+
+        function updateLXTNavigation() {
+            const counter = document.getElementById('lxt-sample-counter');
+            const prevBtn = document.getElementById('lxt-prev-btn');
+            const nextBtn = document.getElementById('lxt-next-btn');
+
+            if (counter) {
+                counter.textContent = `Sample ${currentLXTSampleIndex + 1} of ${chartData.maxSamples}`;
+            }
+
+            if (prevBtn) {
+                prevBtn.disabled = currentLXTSampleIndex === 0;
+            }
+
+            if (nextBtn) {
+                nextBtn.disabled = currentLXTSampleIndex === chartData.maxSamples - 1;
+            }
+        }
+
+        function renderLXTSample(sampleIdx) {
+            const container = document.getElementById('lxt-samples-container');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-${Math.min(chartData.jobs.length, 3)} gap-4" id="lxt-sample-${sampleIdx}"></div>
+            `;
+
+            // Render LXT for each job (always render all jobs, pass null if no data)
+            chartData.jobs.forEach((job, jobIdx) => {
+                const lxtData = job.result?.diagnostics?.lxt;
+                const sampleData = lxtData && lxtData[sampleIdx] ? lxtData[sampleIdx] : null;
+                renderLXTForJob(sampleIdx, jobIdx, job, sampleData);
+            });
+        }
+
+        function renderLXTForJob(sampleIdx, jobIdx, job, sampleData) {
+            const jobContainer = document.getElementById(`lxt-sample-${sampleIdx}`);
+            if (!jobContainer) return;
+
+            // Check if this job has data for this sample
+            if (!sampleData || !sampleData.attribution_matrix || sampleData.attribution_matrix.length === 0) {
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.className = 'diagnostic-job-container';
+                placeholderDiv.innerHTML = `
+                    <h4 class="font-medium text-gray-800 mb-3">
+                        Job #${job.id.substring(0, 8)}
+                        <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                    </h4>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                        <i class="fas fa-info-circle text-gray-400 text-3xl mb-2"></i>
+                        <p class="text-gray-500 text-sm">No LXT data available for this sample</p>
+                    </div>
+                `;
+                jobContainer.appendChild(placeholderDiv);
+                return;
+            }
+
+            const attributionMatrix = sampleData.attribution_matrix || [];
+            const outputTokens = attributionMatrix.map(item => item.generated_token ?? item.output_token).filter(t => t !== null && t !== undefined);
+            const inputTokens = attributionMatrix.length > 0 && attributionMatrix[0].token_relevance
+                ? attributionMatrix[0].token_relevance.map(([token, score]) => token).filter(t => t !== null && t !== undefined)
+                : [];
+
+            const avgImportances = {};
+            attributionMatrix.forEach(item => {
+                const outputToken = item.generated_token ?? item.output_token;
+                if (outputToken !== undefined && outputToken !== null && item.token_relevance) {
+                    const scores = item.token_relevance.map(([token, score]) => score);
+                    const avg = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+                    avgImportances[outputToken] = avg;
+                }
+            });
+
+            const avgColorMap = generateMatplotlibColorMap(Object.values(avgImportances), 'RdBu_r');
+
+            const jobDiv = document.createElement('div');
+            jobDiv.className = 'diagnostic-job-container';
+            jobDiv.innerHTML = `
+                <h4 class="font-medium text-gray-800 mb-3">
+                    Job #${job.id.substring(0, 8)}
+                    <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                </h4>
+                
+                <div class="mb-4">
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center">
+                        <i class="fas fa-file-text mr-1 text-blue-500"></i>
+                        Input Tokens
+                    </div>
+                    <div class="token-container" id="lxt-input-${sampleIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div>
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center">
+                        <i class="fas fa-file-alt mr-1 text-green-500"></i>
+                        Output Tokens (hover/click)
+                    </div>
+                    <div class="token-container" id="lxt-output-${sampleIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div class="diagnostic-tooltip" id="lxt-tooltip-${sampleIdx}-${jobIdx}"></div>
+            `;
+
+            jobContainer.appendChild(jobDiv);
+
+            const inputContainer = document.getElementById(`lxt-input-${sampleIdx}-${jobIdx}`);
+            inputTokens.forEach((token, idx) => {
+                const cleanToken = token.replace(/\\u2581/g, '').replace(/_/g, '').replace(/\u2581/g, '') || '(space)';
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token';
+                span.style.backgroundColor = '#f3f4f6';
+                span.style.color = '#374151';
+                span.textContent = cleanToken;
+                span.dataset.tokenIndex = idx;
+                span.dataset.currentScore = '0.0000';
+                console.log('[LXT INPUT] Attaching listeners to token', idx, cleanToken, 'tooltipId:', `lxt-tooltip-${sampleIdx}-${jobIdx}`);
+                span.addEventListener('mouseover', (e) => {
+                    console.log('[LXT INPUT] Mouseover on token', idx, 'score:', span.dataset.currentScore);
+                    showTooltip(span, e, `lxt-tooltip-${sampleIdx}-${jobIdx}`);
+                });
+                span.addEventListener('mouseout', () => hideTooltip(`lxt-tooltip-${sampleIdx}-${jobIdx}`));
+                inputContainer.appendChild(span);
+            });
+
+            const outputContainer = document.getElementById(`lxt-output-${sampleIdx}-${jobIdx}`);
+            let lockedToken = null;
+
+            outputTokens.forEach((token, idx) => {
+                const cleanToken = token.replace(/\\u2581/g, '').replace(/_/g, '').replace(/\u2581/g, '') || '(space)';
+                const avgScore = avgImportances[token];
+                const color = avgColorMap[avgScore] || '#f3f4f6';
+                const textColor = getContrastTextColor(color);
+
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token diagnostic-output-token';
+                span.style.backgroundColor = color;
+                span.style.color = textColor;
+                span.textContent = cleanToken;
+                span.dataset.tokenIndex = idx;
+                span.dataset.token = token;
+
+                span.addEventListener('mouseover', () => {
+                    if (lockedToken === null) {
+                        highlightLXTRelevance(sampleIdx, jobIdx, idx, attributionMatrix, inputContainer, outputContainer, false);
+                    }
+                });
+
+                span.addEventListener('mouseout', () => {
+                    if (lockedToken === null) {
+                        clearLXTHighlight(inputContainer, outputContainer);
+                    }
+                });
+
+                span.addEventListener('click', () => {
+                    if (lockedToken === idx) {
+                        lockedToken = null;
+                        span.classList.remove('locked');
+                        clearLXTHighlight(inputContainer, outputContainer);
+                    } else {
+                        outputContainer.querySelectorAll('.diagnostic-output-token').forEach(el => el.classList.remove('locked'));
+                        lockedToken = idx;
+                        span.classList.add('locked');
+                        highlightLXTRelevance(sampleIdx, jobIdx, idx, attributionMatrix, inputContainer, outputContainer, true);
+                    }
+                });
+
+                outputContainer.appendChild(span);
+            });
+        }
+
+        function highlightLXTRelevance(sampleIdx, jobIdx, tokenIdx, attributionMatrix, inputContainer, outputContainer, isLocked) {
+            const attributionItem = attributionMatrix[tokenIdx];
+            if (!attributionItem) return;
+
+            const tokenRelevance = attributionItem.token_relevance || [];
+            const allScores = tokenRelevance.map(([token, score]) => score);
+            const colorMap = generateMatplotlibColorMap(allScores, 'RdBu_r');
+
+            const inputTokenElements = inputContainer.querySelectorAll('.diagnostic-token');
+            inputTokenElements.forEach((element, index) => {
+                if (index < tokenRelevance.length) {
+                    const [token, score] = tokenRelevance[index];
+                    const color = colorMap[score] || '#f3f4f6';
+                    const textColor = getContrastTextColor(color);
+                    element.style.backgroundColor = color;
+                    element.style.color = textColor;
+                    element.dataset.currentScore = score.toFixed(4);
+                }
+            });
+
+            const outputTokenElements = outputContainer.querySelectorAll('.diagnostic-output-token');
+            outputTokenElements.forEach((el, idx) => {
+                if (idx === tokenIdx) {
+                    el.style.transform = 'scale(1.05)';
+                    el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                } else {
+                    el.style.opacity = '0.5';
+                }
+            });
+        }
+
+        function clearLXTHighlight(inputContainer, outputContainer) {
+            const inputTokenElements = inputContainer.querySelectorAll('.diagnostic-token');
+            inputTokenElements.forEach(element => {
+                element.style.backgroundColor = '#f3f4f6';
+                element.style.color = '#374151';
+                element.dataset.currentScore = '0.0000';
+            });
+
+            const outputTokenElements = outputContainer.querySelectorAll('.diagnostic-output-token');
+            outputTokenElements.forEach(el => {
+                el.style.transform = '';
+                el.style.boxShadow = '';
+                el.style.opacity = '1';
+            });
+        }
+
+        // ==================== SHAP Encoder Visualization Functions ====================
+
+        function initSHAPEncoderVisualizations() {
+            const container = document.getElementById('shap-encoder-jobs-container');
+            if (!container) return;
+
+            // Check if any job has SHAP encoder diagnostics
+            const hasSHAPEncoder = chartData.jobs.some(job =>
+                job.result && job.result.diagnostics && job.result.diagnostics.shap_encoder
+            );
+
+            if (!hasSHAPEncoder) {
+                document.getElementById('shap-encoder-comparison-section').style.display = 'none';
+                return;
+            }
+
+            // Calculate max queries across all jobs
+            totalSHAPEncoderQueries = Math.max(...chartData.jobs.map(job =>
+                job.result?.diagnostics?.shap_encoder?.length || 0
+            ));
+
+            if (totalSHAPEncoderQueries === 0) {
+                document.getElementById('shap-encoder-comparison-section').style.display = 'none';
+                return;
+            }
+
+            currentSHAPEncoderQueryIndex = 0;
+            currentSHAPEncoderDocIndex = 0;
+            totalSHAPEncoderDocs = calculateMaxDocsForQuery(0, 'shap_encoder');
+
+            renderSHAPEncoderView(0, 0);
+            updateSHAPEncoderNavigation();
+        }
+
+        function navigateSHAPEncoderQuery(direction) {
+            const newIndex = currentSHAPEncoderQueryIndex + direction;
+            if (newIndex >= 0 && newIndex < totalSHAPEncoderQueries) {
+                currentSHAPEncoderQueryIndex = newIndex;
+                currentSHAPEncoderDocIndex = 0;
+                totalSHAPEncoderDocs = calculateMaxDocsForQuery(currentSHAPEncoderQueryIndex, 'shap_encoder');
+
+                renderSHAPEncoderView(currentSHAPEncoderQueryIndex, 0);
+                updateSHAPEncoderNavigation();
+            }
+        }
+
+        function navigateSHAPEncoderDocument(direction) {
+            const newIndex = currentSHAPEncoderDocIndex + direction;
+            if (newIndex >= 0 && newIndex < totalSHAPEncoderDocs) {
+                currentSHAPEncoderDocIndex = newIndex;
+                renderSHAPEncoderView(currentSHAPEncoderQueryIndex, currentSHAPEncoderDocIndex);
+                updateSHAPEncoderNavigation();
+            }
+        }
+
+        function updateSHAPEncoderNavigation() {
+            const queryCounter = document.getElementById('shap-encoder-query-counter');
+            const docCounter = document.getElementById('shap-encoder-doc-counter');
+            const prevQueryBtn = document.getElementById('shap-encoder-prev-query-btn');
+            const nextQueryBtn = document.getElementById('shap-encoder-next-query-btn');
+            const prevDocBtn = document.getElementById('shap-encoder-prev-doc-btn');
+            const nextDocBtn = document.getElementById('shap-encoder-next-doc-btn');
+
+            if (queryCounter) {
+                queryCounter.textContent = `Query ${currentSHAPEncoderQueryIndex + 1} of ${totalSHAPEncoderQueries}`;
+            }
+
+            if (docCounter) {
+                docCounter.textContent = `Document ${currentSHAPEncoderDocIndex + 1} of ${totalSHAPEncoderDocs}`;
+            }
+
+            if (prevQueryBtn) prevQueryBtn.disabled = currentSHAPEncoderQueryIndex === 0;
+            if (nextQueryBtn) nextQueryBtn.disabled = currentSHAPEncoderQueryIndex >= totalSHAPEncoderQueries - 1;
+            if (prevDocBtn) prevDocBtn.disabled = currentSHAPEncoderDocIndex === 0;
+            if (nextDocBtn) nextDocBtn.disabled = currentSHAPEncoderDocIndex >= totalSHAPEncoderDocs - 1;
+        }
+
+        function renderSHAPEncoderView(queryIdx, docIdx) {
+            const jobsContainer = document.getElementById('shap-encoder-jobs-container');
+            const contextPanel = document.getElementById('shap-encoder-context-panel');
+            if (!jobsContainer || !contextPanel) return;
+
+            // Clear containers
+            jobsContainer.innerHTML = '';
+            contextPanel.innerHTML = '';
+
+            // Get first job with data for context
+            const firstJobWithData = chartData.jobs.find(job =>
+                job.result?.diagnostics?.shap_encoder?.[queryIdx]?.attributions?.[docIdx]
+            );
+
+            if (!firstJobWithData) {
+                contextPanel.innerHTML = '<div class="text-center text-gray-500 py-4">No data available for this query-document pair</div>';
+                return;
+            }
+
+            const queryData = firstJobWithData.result.diagnostics.shap_encoder[queryIdx];
+            const docData = queryData.attributions[docIdx];
+
+            // Calculate average rerank score across jobs
+            let totalScore = 0;
+            let scoreCount = 0;
+            chartData.jobs.forEach(job => {
+                const score = job.result?.diagnostics?.shap_encoder?.[queryIdx]?.attributions?.[docIdx]?.rerank_score;
+                if (score !== undefined) {
+                    totalScore += score;
+                    scoreCount++;
+                }
+            });
+            const avgRerankScore = scoreCount > 0 ? (totalScore / scoreCount).toFixed(4) : 'N/A';
+
+            // Render context panel
+            contextPanel.innerHTML = `
+                <div class="bg-gradient-to-r from-teal-50 to-indigo-50 rounded-lg p-4 mb-4 border border-teal-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
+                        <div>
+                            <span class="font-medium text-gray-700">Query ID:</span>
+                            <span class="ml-2 text-gray-900 font-mono">${queryData.query_id || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-700">Document ID:</span>
+                            <span class="ml-2 text-gray-900 font-mono">${docData.document_id || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-700">Avg Rerank Score:</span>
+                            <span class="ml-2 text-teal-700 font-bold">${avgRerankScore}</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-teal-200">
+                        <div class="font-medium text-gray-700 mb-1">Query Text:</div>
+                        <div class="text-gray-900 bg-white rounded p-2 text-sm">${escapeHtml(queryData.query)}</div>
+                    </div>
+                    <div class="mt-2">
+                        <button onclick="showFullText(\`${escapeHtml(docData.document_text).replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, \`${docData.document_id || 'N/A'}\`)" 
+                                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                            <i class="fas fa-file-alt mr-1"></i>View Full Document
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Set grid columns
+            jobsContainer.className = `grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-${Math.min(chartData.jobs.length, 3)} gap-4`;
+
+            // Render each job
+            chartData.jobs.forEach((job, jobIdx) => {
+                renderSHAPEncoderForJob(queryIdx, docIdx, jobIdx, job);
+            });
+        }
+
+        function renderSHAPEncoderForJob(queryIdx, docIdx, jobIdx, job) {
+            const container = document.getElementById('shap-encoder-jobs-container');
+            if (!container) return;
+
+            const data = job.result?.diagnostics?.shap_encoder;
+            const queryData = data?.[queryIdx];
+            const docData = queryData?.attributions?.[docIdx];
+
+            // Check if this job has data
+            if (!docData) {
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.className = 'diagnostic-job-container';
+                placeholderDiv.innerHTML = `
+                    <h4 class="font-medium text-gray-800 mb-3">
+                        Job #${job.id.substring(0, 8)}
+                        <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                    </h4>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                        <i class="fas fa-exclamation-circle text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-gray-500 text-sm">No data available</p>
+                    </div>
+                `;
+                container.appendChild(placeholderDiv);
+                return;
+            }
+
+            const queryAttrs = docData.query_attributions || [];
+            const docAttrs = docData.document_attributions || [];
+
+            // Generate colormap
+            const allScores = [
+                ...queryAttrs.map(([token, score]) => score),
+                ...docAttrs.map(([token, score]) => score)
+            ];
+            const colorMap = generateMatplotlibColorMap(allScores, 'RdBu_r');
+
+            const jobDiv = document.createElement('div');
+            jobDiv.className = 'diagnostic-job-container';
+            jobDiv.innerHTML = `
+                <h4 class="font-medium text-gray-800 mb-3">
+                    Job #${job.id.substring(0, 8)}
+                    <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                </h4>
+                
+                <div class="mb-4">
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center justify-between">
+                        <span><i class="fas fa-search mr-1 text-teal-600"></i>Query Token Attributions</span>
+                        <span class="text-gray-500">${queryAttrs.length} tokens</span>
+                    </div>
+                    <div class="token-container" id="shap-encoder-query-${queryIdx}-${docIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div>
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center justify-between">
+                        <span><i class="fas fa-file-text mr-1 text-indigo-600"></i>Document Token Attributions</span>
+                        <span class="text-gray-500">${docAttrs.length} tokens</span>
+                    </div>
+                    <div class="token-container" id="shap-encoder-doc-${queryIdx}-${docIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div class="diagnostic-tooltip" id="shap-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}"></div>
+            `;
+
+            container.appendChild(jobDiv);
+
+            // Render query tokens
+            const queryContainer = document.getElementById(`shap-encoder-query-${queryIdx}-${docIdx}-${jobIdx}`);
+            queryAttrs.forEach(([token, score]) => {
+                const cleanToken = token.replace(/▁/g, ' ').replace(/Ġ/g, ' ').trim() || '(space)';
+                const bgColor = colorMap[score] || 'rgb(247,247,247)';
+                const textColor = getContrastTextColor(bgColor);
+
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token';
+                span.style.backgroundColor = bgColor;
+                span.style.color = textColor;
+                span.textContent = cleanToken;
+                span.dataset.currentScore = score.toFixed(4);
+
+                span.addEventListener('mouseover', (e) =>
+                    showTooltip(span, e, `shap-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+                span.addEventListener('mouseout', () =>
+                    hideTooltip(`shap-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+
+                queryContainer.appendChild(span);
+            });
+
+            // Render document tokens
+            const docContainer = document.getElementById(`shap-encoder-doc-${queryIdx}-${docIdx}-${jobIdx}`);
+            docAttrs.forEach(([token, score]) => {
+                const cleanToken = token.replace(/▁/g, ' ').replace(/Ġ/g, ' ').trim() || '(space)';
+                const bgColor = colorMap[score] || 'rgb(247,247,247)';
+                const textColor = getContrastTextColor(bgColor);
+
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token';
+                span.style.backgroundColor = bgColor;
+                span.style.color = textColor;
+                span.textContent = cleanToken;
+                span.dataset.currentScore = score.toFixed(4);
+
+                span.addEventListener('mouseover', (e) =>
+                    showTooltip(span, e, `shap-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+                span.addEventListener('mouseout', () =>
+                    hideTooltip(`shap-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+
+                docContainer.appendChild(span);
+            });
+        }
+
+        // ==================== IG Encoder Visualization Functions ====================
+
+        function initIGEncoderVisualizations() {
+            const container = document.getElementById('ig-encoder-jobs-container');
+            if (!container) return;
+
+            // Check if any job has IG encoder diagnostics
+            const hasIGEncoder = chartData.jobs.some(job =>
+                job.result && job.result.diagnostics && job.result.diagnostics.integrated_gradients_encoder
+            );
+
+            if (!hasIGEncoder) {
+                document.getElementById('ig-encoder-comparison-section').style.display = 'none';
+                return;
+            }
+
+            // Calculate max queries across all jobs
+            totalIGEncoderQueries = Math.max(...chartData.jobs.map(job =>
+                job.result?.diagnostics?.integrated_gradients_encoder?.length || 0
+            ));
+
+            if (totalIGEncoderQueries === 0) {
+                document.getElementById('ig-encoder-comparison-section').style.display = 'none';
+                return;
+            }
+
+            currentIGEncoderQueryIndex = 0;
+            currentIGEncoderDocIndex = 0;
+            totalIGEncoderDocs = calculateMaxDocsForQuery(0, 'integrated_gradients_encoder');
+
+            renderIGEncoderView(0, 0);
+            updateIGEncoderNavigation();
+        }
+
+        function navigateIGEncoderQuery(direction) {
+            const newIndex = currentIGEncoderQueryIndex + direction;
+            if (newIndex >= 0 && newIndex < totalIGEncoderQueries) {
+                currentIGEncoderQueryIndex = newIndex;
+                currentIGEncoderDocIndex = 0;
+                totalIGEncoderDocs = calculateMaxDocsForQuery(currentIGEncoderQueryIndex, 'integrated_gradients_encoder');
+
+                renderIGEncoderView(currentIGEncoderQueryIndex, 0);
+                updateIGEncoderNavigation();
+            }
+        }
+
+        function navigateIGEncoderDocument(direction) {
+            const newIndex = currentIGEncoderDocIndex + direction;
+            if (newIndex >= 0 && newIndex < totalIGEncoderDocs) {
+                currentIGEncoderDocIndex = newIndex;
+                renderIGEncoderView(currentIGEncoderQueryIndex, currentIGEncoderDocIndex);
+                updateIGEncoderNavigation();
+            }
+        }
+
+        function updateIGEncoderNavigation() {
+            const queryCounter = document.getElementById('ig-encoder-query-counter');
+            const docCounter = document.getElementById('ig-encoder-doc-counter');
+            const prevQueryBtn = document.getElementById('ig-encoder-prev-query-btn');
+            const nextQueryBtn = document.getElementById('ig-encoder-next-query-btn');
+            const prevDocBtn = document.getElementById('ig-encoder-prev-doc-btn');
+            const nextDocBtn = document.getElementById('ig-encoder-next-doc-btn');
+
+            if (queryCounter) {
+                queryCounter.textContent = `Query ${currentIGEncoderQueryIndex + 1} of ${totalIGEncoderQueries}`;
+            }
+
+            if (docCounter) {
+                docCounter.textContent = `Document ${currentIGEncoderDocIndex + 1} of ${totalIGEncoderDocs}`;
+            }
+
+            if (prevQueryBtn) prevQueryBtn.disabled = currentIGEncoderQueryIndex === 0;
+            if (nextQueryBtn) nextQueryBtn.disabled = currentIGEncoderQueryIndex >= totalIGEncoderQueries - 1;
+            if (prevDocBtn) prevDocBtn.disabled = currentIGEncoderDocIndex === 0;
+            if (nextDocBtn) nextDocBtn.disabled = currentIGEncoderDocIndex >= totalIGEncoderDocs - 1;
+        }
+
+        function renderIGEncoderView(queryIdx, docIdx) {
+            const jobsContainer = document.getElementById('ig-encoder-jobs-container');
+            const contextPanel = document.getElementById('ig-encoder-context-panel');
+            if (!jobsContainer || !contextPanel) return;
+
+            // Clear containers
+            jobsContainer.innerHTML = '';
+            contextPanel.innerHTML = '';
+
+            // Get first job with data for context
+            const firstJobWithData = chartData.jobs.find(job =>
+                job.result?.diagnostics?.integrated_gradients_encoder?.[queryIdx]?.attributions?.[docIdx]
+            );
+
+            if (!firstJobWithData) {
+                contextPanel.innerHTML = '<div class="text-center text-gray-500 py-4">No data available for this query-document pair</div>';
+                return;
+            }
+
+            const queryData = firstJobWithData.result.diagnostics.integrated_gradients_encoder[queryIdx];
+            const docData = queryData.attributions[docIdx];
+
+            // Calculate average rerank score and convergence deltas
+            let totalScore = 0, totalQueryDelta = 0, totalDocDelta = 0;
+            let scoreCount = 0, queryDeltaCount = 0, docDeltaCount = 0;
+
+            chartData.jobs.forEach(job => {
+                const jobDocData = job.result?.diagnostics?.integrated_gradients_encoder?.[queryIdx]?.attributions?.[docIdx];
+                if (jobDocData) {
+                    if (jobDocData.rerank_score !== undefined) {
+                        totalScore += jobDocData.rerank_score;
+                        scoreCount++;
+                    }
+                    if (jobDocData.query_convergence_delta !== undefined) {
+                        totalQueryDelta += jobDocData.query_convergence_delta;
+                        queryDeltaCount++;
+                    }
+                    if (jobDocData.document_convergence_delta !== undefined) {
+                        totalDocDelta += jobDocData.document_convergence_delta;
+                        docDeltaCount++;
+                    }
+                }
+            });
+
+            const avgRerankScore = scoreCount > 0 ? (totalScore / scoreCount).toFixed(4) : 'N/A';
+            const avgQueryDelta = queryDeltaCount > 0 ? totalQueryDelta / queryDeltaCount : null;
+            const avgDocDelta = docDeltaCount > 0 ? totalDocDelta / docDeltaCount : null;
+
+            // Render context panel with convergence delta
+            contextPanel.innerHTML = `
+                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4 mb-4 border border-purple-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
+                        <div>
+                            <span class="font-medium text-gray-700">Query ID:</span>
+                            <span class="ml-2 text-gray-900 font-mono">${queryData.query_id || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-700">Document ID:</span>
+                            <span class="ml-2 text-gray-900 font-mono">${docData.document_id || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-700">Avg Rerank Score:</span>
+                            <span class="ml-2 text-purple-700 font-bold">${avgRerankScore}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-700">Avg Convergence Delta:</span>
+                            <div class="ml-2 text-xs space-y-1">
+                                ${formatConvergenceDelta(avgQueryDelta, 'Query')}
+                                ${formatConvergenceDelta(avgDocDelta, 'Doc')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-purple-200">
+                        <div class="font-medium text-gray-700 mb-1">Query Text:</div>
+                        <div class="text-gray-900 bg-white rounded p-2 text-sm">${escapeHtml(queryData.query)}</div>
+                    </div>
+                    <div class="mt-2">
+                        <button onclick="showFullText(\`${escapeHtml(docData.document_text).replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, \`${docData.document_id || 'N/A'}\`)" 
+                                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                            <i class="fas fa-file-alt mr-1"></i>View Full Document
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Set grid columns
+            jobsContainer.className = `grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-${Math.min(chartData.jobs.length, 3)} gap-4`;
+
+            // Render each job
+            chartData.jobs.forEach((job, jobIdx) => {
+                renderIGEncoderForJob(queryIdx, docIdx, jobIdx, job);
+            });
+        }
+
+        function renderIGEncoderForJob(queryIdx, docIdx, jobIdx, job) {
+            const container = document.getElementById('ig-encoder-jobs-container');
+            if (!container) return;
+
+            const data = job.result?.diagnostics?.integrated_gradients_encoder;
+            const queryData = data?.[queryIdx];
+            const docData = queryData?.attributions?.[docIdx];
+
+            // Check if this job has data
+            if (!docData) {
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.className = 'diagnostic-job-container';
+                placeholderDiv.innerHTML = `
+                    <h4 class="font-medium text-gray-800 mb-3">
+                        Job #${job.id.substring(0, 8)}
+                        <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                    </h4>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                        <i class="fas fa-exclamation-circle text-3xl text-gray-300 mb-2"></i>
+                        <p class="text-gray-500 text-sm">No data available</p>
+                    </div>
+                `;
+                container.appendChild(placeholderDiv);
+                return;
+            }
+
+            const queryAttrs = docData.query_attributions || [];
+            const docAttrs = docData.document_attributions || [];
+
+            // Generate colormap
+            const allScores = [
+                ...queryAttrs.map(([token, score]) => score),
+                ...docAttrs.map(([token, score]) => score)
+            ];
+            const colorMap = generateMatplotlibColorMap(allScores, 'RdBu_r');
+
+            // Format convergence deltas for this job
+            const queryDeltaHtml = formatConvergenceDelta(docData.query_convergence_delta, 'Query');
+            const docDeltaHtml = formatConvergenceDelta(docData.document_convergence_delta, 'Doc');
+
+            const jobDiv = document.createElement('div');
+            jobDiv.className = 'diagnostic-job-container';
+            jobDiv.innerHTML = `
+                <h4 class="font-medium text-gray-800 mb-3">
+                    Job #${job.id.substring(0, 8)}
+                    <span class="text-xs text-gray-500 ml-2">${new Date(job.created_at).toLocaleString()}</span>
+                </h4>
+                
+                <div class="bg-purple-50 rounded p-2 mb-3 text-xs">
+                    <div class="font-medium text-gray-700 mb-1">Convergence Quality:</div>
+                    <div class="space-y-1">
+                        ${queryDeltaHtml}
+                        ${docDeltaHtml}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center justify-between">
+                        <span><i class="fas fa-search mr-1 text-purple-600"></i>Query Token Attributions</span>
+                        <span class="text-gray-500">${queryAttrs.length} tokens</span>
+                    </div>
+                    <div class="token-container" id="ig-encoder-query-${queryIdx}-${docIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div>
+                    <div class="text-xs font-medium text-gray-600 mb-2 flex items-center justify-between">
+                        <span><i class="fas fa-file-text mr-1 text-indigo-600"></i>Document Token Attributions</span>
+                        <span class="text-gray-500">${docAttrs.length} tokens</span>
+                    </div>
+                    <div class="token-container" id="ig-encoder-doc-${queryIdx}-${docIdx}-${jobIdx}"></div>
+                </div>
+                
+                <div class="diagnostic-tooltip" id="ig-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}"></div>
+            `;
+
+            container.appendChild(jobDiv);
+
+            // Render query tokens
+            const queryContainer = document.getElementById(`ig-encoder-query-${queryIdx}-${docIdx}-${jobIdx}`);
+            queryAttrs.forEach(([token, score]) => {
+                const cleanToken = token.replace(/▁/g, ' ').replace(/Ġ/g, ' ').trim() || '(space)';
+                const bgColor = colorMap[score] || 'rgb(247,247,247)';
+                const textColor = getContrastTextColor(bgColor);
+
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token';
+                span.style.backgroundColor = bgColor;
+                span.style.color = textColor;
+                span.textContent = cleanToken;
+                span.dataset.currentScore = score.toFixed(4);
+
+                span.addEventListener('mouseover', (e) =>
+                    showTooltip(span, e, `ig-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+                span.addEventListener('mouseout', () =>
+                    hideTooltip(`ig-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+
+                queryContainer.appendChild(span);
+            });
+
+            // Render document tokens
+            const docContainer = document.getElementById(`ig-encoder-doc-${queryIdx}-${docIdx}-${jobIdx}`);
+            docAttrs.forEach(([token, score]) => {
+                const cleanToken = token.replace(/▁/g, ' ').replace(/Ġ/g, ' ').trim() || '(space)';
+                const bgColor = colorMap[score] || 'rgb(247,247,247)';
+                const textColor = getContrastTextColor(bgColor);
+
+                const span = document.createElement('span');
+                span.className = 'diagnostic-token';
+                span.style.backgroundColor = bgColor;
+                span.style.color = textColor;
+                span.textContent = cleanToken;
+                span.dataset.currentScore = score.toFixed(4);
+
+                span.addEventListener('mouseover', (e) =>
+                    showTooltip(span, e, `ig-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+                span.addEventListener('mouseout', () =>
+                    hideTooltip(`ig-encoder-tooltip-${queryIdx}-${docIdx}-${jobIdx}`)
+                );
+
+                docContainer.appendChild(span);
+            });
+        }
+
+        // ==================== Helper Functions ====================
+
+        function calculateMaxDocsForQuery(queryIdx, diagnosticType) {
+            return Math.max(...chartData.jobs.map(job => {
+                const data = job.result?.diagnostics?.[diagnosticType]?.[queryIdx];
+                return data?.attributions?.length || 0;
+            }));
+        }
+
+        function formatConvergenceDelta(delta, label) {
+            if (delta === undefined || delta === null) {
+                return `<div class="flex items-center text-gray-400"><span class="font-mono text-xs">${label} δ: N/A</span></div>`;
+            }
+
+            const threshold = 0.05;
+            const isGood = Math.abs(delta) < threshold;
+            const colorClass = isGood ? 'text-green-600' : (Math.abs(delta) < 0.1 ? 'text-orange-600' : 'text-red-600');
+
+            return `
+                <div class="flex items-center justify-between ${colorClass}">
+                    <span class="font-mono text-xs">${label} δ: ${delta.toFixed(4)}</span>
+                </div>
+            `;
+        }
+
+        // Store timeout IDs for delayed tooltip hiding
+        const tooltipHideTimeouts = {};
+
+        function showTooltip(element, event, tooltipId) {
+            // Cancel any pending hide for this tooltip
+            if (tooltipHideTimeouts[tooltipId]) {
+                clearTimeout(tooltipHideTimeouts[tooltipId]);
+                delete tooltipHideTimeouts[tooltipId];
+            }
+
+            const score = element.dataset.currentScore || '0.0000';
+
+            // Don't show tooltip if score is default
+            if (score === '0.0000') {
+                return;
+            }
+
+            const tooltip = document.getElementById(tooltipId);
+            if (!tooltip) {
+                console.error('[TOOLTIP] Tooltip element not found!', tooltipId);
+                return;
+            }
+
+            tooltip.textContent = `Score: ${score}`;
+            tooltip.style.display = 'block';
+
+            // Position tooltip above the element (using viewport coordinates for position: fixed)
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+
+            const left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+            const top = rect.top - tooltipRect.height - 8;
+
+            // Center horizontally above the token
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        }
+
+        function hideTooltip(tooltipId) {
+            // Delay hiding to prevent flickering when moving between tokens
+            tooltipHideTimeouts[tooltipId] = setTimeout(() => {
+                const tooltip = document.getElementById(tooltipId);
+                if (tooltip) {
+                    tooltip.style.display = 'none';
+                }
+                delete tooltipHideTimeouts[tooltipId];
+            }, 50); // 50ms delay
+        }
+
+        function toggleDocuments(button, sampleIdx) {
+            const docsContainer = document.getElementById(`docs-${sampleIdx}`);
+            const icon = button.querySelector('i');
+
+            if (docsContainer.classList.contains('hidden')) {
+                // Expand
+                docsContainer.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                button.innerHTML = button.innerHTML.replace('Show', 'Hide');
+            } else {
+                // Collapse
+                docsContainer.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                button.innerHTML = button.innerHTML.replace('Hide', 'Show');
+            }
+        }
+
+        function showFullText(text, docId) {
+            document.getElementById('modalDocId').textContent = docId;
+            document.getElementById('modalDocText').textContent = text;
+            document.getElementById('documentModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('documentModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function (event) {
+            const modal = document.getElementById('documentModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Add expand all / collapse all functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add a global toggle button in the table header
+            const tableHeader = document.querySelector('.comparison-table thead tr');
+            if (tableHeader && document.querySelector('.expand-docs-btn')) {
+                const retrievedDocsHeader = tableHeader.querySelector('th:nth-child(3)'); // Retrieved Documents column
+                if (retrievedDocsHeader) {
+                    const globalToggle = document.createElement('div');
+                    globalToggle.className = 'mt-2';
+                    globalToggle.innerHTML = `
+                        <button onclick="toggleAllDocuments()" 
+                                class="text-xs text-primary hover:text-primary/80 font-medium focus:outline-none">
+                            <i class="fas fa-expand-alt mr-1"></i>
+                            <span id="global-toggle-text">Expand All</span>
+                        </button>
+                    `;
+                    retrievedDocsHeader.appendChild(globalToggle);
+                }
+            }
+        });
+
+        function toggleAllDocuments() {
+            const allExpandButtons = document.querySelectorAll('.expand-docs-btn');
+            const globalToggleText = document.getElementById('global-toggle-text');
+            const globalToggleIcon = document.querySelector('#global-toggle-text').previousElementSibling;
+
+            if (globalToggleText.textContent === 'Expand All') {
+                // Expand all
+                allExpandButtons.forEach(button => {
+                    const sampleIdx = button.getAttribute('onclick').match(/\d+/)[0];
+                    const docsContainer = document.getElementById(`docs-${sampleIdx}`);
+                    if (docsContainer && docsContainer.classList.contains('hidden')) {
+                        button.click();
+                    }
+                });
+                globalToggleText.textContent = 'Collapse All';
+                globalToggleIcon.classList.remove('fa-expand-alt');
+                globalToggleIcon.classList.add('fa-compress-alt');
+            } else {
+                // Collapse all
+                allExpandButtons.forEach(button => {
+                    const sampleIdx = button.getAttribute('onclick').match(/\d+/)[0];
+                    const docsContainer = document.getElementById(`docs-${sampleIdx}`);
+                    if (docsContainer && !docsContainer.classList.contains('hidden')) {
+                        button.click();
+                    }
+                });
+                globalToggleText.textContent = 'Expand All';
+                globalToggleIcon.classList.remove('fa-compress-alt');
+                globalToggleIcon.classList.add('fa-expand-alt');
+            }
+        }
+
+        // Text truncation and expansion functionality
+        let predictionTexts = {};
+        let referenceTexts = {};
+        let inputTexts = {};
+        let predictionExpanded = {};
+        let referenceExpanded = {};
+        let inputExpanded = {};
+
+        function truncateToWords(text, wordCount) {
+            if (!text) return '';
+            const words = text.split(' ');
+            if (words.length <= wordCount) return text;
+            return words.slice(0, wordCount).join(' ') + '...';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function initTextTruncation() {
+            // Initialize prediction text truncation
+            document.querySelectorAll('.prediction-content').forEach(element => {
+                const fullText = element.textContent.trim();
+                const elementId = element.id;
+
+                if (fullText) {
+                    predictionTexts[elementId] = fullText;
+                    predictionExpanded[elementId] = false;
+
+                    const words = fullText.split(' ');
+                    if (words.length > 100) {
+                        const truncated = truncateToWords(fullText, 100);
+                        element.innerHTML = escapeHtml(truncated);
+                        const toggleBtn = document.getElementById(elementId.replace('content', 'toggle'));
+                        if (toggleBtn) {
+                            toggleBtn.classList.remove('hidden');
+                        }
+                    }
+                }
+            });
+
+            // Initialize reference text truncation
+            document.querySelectorAll('.reference-content').forEach(element => {
+                const fullText = element.textContent.trim();
+                const elementId = element.id;
+
+                if (fullText) {
+                    referenceTexts[elementId] = fullText;
+                    referenceExpanded[elementId] = false;
+
+                    const words = fullText.split(' ');
+                    if (words.length > 100) {
+                        const truncated = truncateToWords(fullText, 100);
+                        element.innerHTML = escapeHtml(truncated);
+                        const toggleBtn = document.getElementById(elementId.replace('content', 'toggle'));
+                        if (toggleBtn) {
+                            toggleBtn.classList.remove('hidden');
+                        }
+                    }
+                }
+            });
+
+            // Initialize input text truncation
+            document.querySelectorAll('.input-content').forEach(element => {
+                const fullText = element.textContent.trim();
+                const elementId = element.id;
+
+                if (fullText) {
+                    inputTexts[elementId] = fullText;
+                    inputExpanded[elementId] = false;
+
+                    const words = fullText.split(' ');
+                    if (words.length > 100) {
+                        const truncated = truncateToWords(fullText, 100);
+                        element.innerHTML = escapeHtml(truncated);
+                        const toggleBtn = document.getElementById(elementId.replace('content', 'toggle'));
+                        if (toggleBtn) {
+                            toggleBtn.classList.remove('hidden');
+                        }
+                    }
+                }
+            });
+        }
+
+        function togglePredictionText(sampleIdx, jobIdx, fullText) {
+            const contentId = `prediction-content-${sampleIdx}-${jobIdx}`;
+            const toggleId = `prediction-toggle-${sampleIdx}-${jobIdx}`;
+            const contentElement = document.getElementById(contentId);
+            const toggleBtn = document.getElementById(toggleId);
+
+            if (!contentElement || !toggleBtn) return;
+
+            // Store full text if not already stored
+            if (!predictionTexts[contentId]) {
+                predictionTexts[contentId] = fullText;
+            }
+
+            const isExpanded = predictionExpanded[contentId] || false;
+
+            if (isExpanded) {
+                // Show truncated version
+                const truncated = truncateToWords(predictionTexts[contentId], 100);
+                contentElement.innerHTML = escapeHtml(truncated);
+                toggleBtn.textContent = 'Show more';
+                predictionExpanded[contentId] = false;
+            } else {
+                // Show full text
+                contentElement.innerHTML = escapeHtml(predictionTexts[contentId]);
+                toggleBtn.textContent = 'Show less';
+                predictionExpanded[contentId] = true;
+            }
+        }
+
+        function toggleReferenceText(sampleIdx, fullText) {
+            const contentId = `reference-content-${sampleIdx}`;
+            const toggleId = `reference-toggle-${sampleIdx}`;
+            const contentElement = document.getElementById(contentId);
+            const toggleBtn = document.getElementById(toggleId);
+
+            if (!contentElement || !toggleBtn) return;
+
+            // Store full text if not already stored
+            if (!referenceTexts[contentId]) {
+                referenceTexts[contentId] = fullText;
+            }
+
+            const isExpanded = referenceExpanded[contentId] || false;
+
+            if (isExpanded) {
+                // Show truncated version
+                const truncated = truncateToWords(referenceTexts[contentId], 100);
+                contentElement.innerHTML = escapeHtml(truncated);
+                toggleBtn.textContent = 'Show more';
+                referenceExpanded[contentId] = false;
+            } else {
+                // Show full text
+                contentElement.innerHTML = escapeHtml(referenceTexts[contentId]);
+                toggleBtn.textContent = 'Show less';
+                referenceExpanded[contentId] = true;
+            }
+        }
+
+        function toggleInputText(sampleIdx, fullText) {
+            const contentId = `input-content-${sampleIdx}`;
+            const toggleId = `input-toggle-${sampleIdx}`;
+            const contentElement = document.getElementById(contentId);
+            const toggleBtn = document.getElementById(toggleId);
+
+            if (!contentElement || !toggleBtn) return;
+
+            // Store full text if not already stored
+            if (!inputTexts[contentId]) {
+                inputTexts[contentId] = fullText;
+            }
+
+            const isExpanded = inputExpanded[contentId] || false;
+
+            if (isExpanded) {
+                // Show truncated version
+                const truncated = truncateToWords(inputTexts[contentId], 100);
+                contentElement.innerHTML = escapeHtml(truncated);
+                toggleBtn.textContent = 'Show more';
+                inputExpanded[contentId] = false;
+            } else {
+                // Show full text
+                contentElement.innerHTML = escapeHtml(inputTexts[contentId]);
+                toggleBtn.textContent = 'Show less';
+                inputExpanded[contentId] = true;
+            }
+        }
+
+        // Initialize text truncation when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            initTextTruncation();
+        });
+    </script>
+</body>
+
+</html>

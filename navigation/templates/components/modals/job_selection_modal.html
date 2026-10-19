@@ -1,0 +1,45 @@
+<!-- Job Selection Modal for Analysis -->
+<div id="job-selection-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Select Job for Analysis</h3>
+                    <p class="text-sm text-gray-500 mt-1">Choose a completed job to use as the basis for analysis</p>
+                </div>
+                <button onclick="closeJobSelectionModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <div id="job-selection-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Job list will be populated by JavaScript -->
+                </div>
+                
+                <div id="no-jobs-message" class="text-center py-8 hidden">
+                    <i class="fas fa-exclamation-circle text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">No Completed Jobs Found</h3>
+                    <p class="text-gray-600">There are no completed jobs available for analysis. Please run a job first.</p>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200 gap-3">
+                <div class="text-sm text-gray-500 flex-shrink-0">
+                    Select a job to proceed with analysis
+                </div>
+                <div class="flex space-x-3 flex-shrink-0">
+                    <button onclick="closeJobSelectionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="run-analysis-btn" onclick="runSelectedAnalysis()" disabled class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Run Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

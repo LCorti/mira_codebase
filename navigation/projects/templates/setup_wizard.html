@@ -1,0 +1,175 @@
+{% extends "head.html" %}
+{% load static %}
+
+{% block title %}Create Project - MIRA{% endblock %}
+
+{% block body %}
+<div class="font-mono h-screen flex flex-col">
+    <div class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div class="w-full max-w-3xl">
+            
+            <!-- Header Component -->
+            <div class="text-center my-4">
+                <div class="logo-animation inline-block mb-4">
+                    <i class="fa-solid fa-brain text-primary text-5xl"></i>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-semibold text-primary mb-2">Project Setup</h1>
+                <!-- Step Counter -->
+                <div class="flex justify-center items-center gap-1 my-4" id="step-counter">
+                    <div class="w-10 h-2 bg-primary rounded-full step-indicator" data-step="1"></div>
+                    <div class="w-10 h-2 bg-gray-300 rounded-full step-indicator" data-step="2"></div>
+                    <div class="w-10 h-2 bg-gray-300 rounded-full step-indicator" data-step="3"></div>
+                    <div class="w-10 h-2 bg-gray-300 rounded-full step-indicator" data-step="4"></div>
+                </div>
+                <p class="text-gray-400" id="step-description">Choose a model to get started</p>
+            </div>
+
+            <!-- Form wrapper for all steps -->
+            <form id="setup-wizard-form" method="post">
+                {% csrf_token %}
+
+                <!-- Step Components -->
+                {% include "setup_wizard/step_1_info.html" %}
+                {% include "setup_wizard/step_2_model_selection.html" %}
+                {% include "setup_wizard/step_3_datasets_metrics.html" %}
+                {% include "setup_wizard/step_4_diagnostics.html" %}
+                {% include "setup_wizard/step_5_review.html" %}
+
+                <!-- Navigation Component -->
+                <div class="flex justify-between mb-4">
+                    <button 
+                        type="button" 
+                        id="back-btn"
+                        class="bg-gray-100 hover:bg-gray-200 text-primary border border-primary font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2" 
+                        onclick="previousStep()"
+                    >
+                        <span id="back-btn-text">Quit</span>
+                    </button>
+                    <button 
+                        type="button" 
+                        id="next-btn"
+                        class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                        onclick="nextStep()"
+                    >
+                        <span id="next-btn-text">Next: Evaluation</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer Component -->
+    <div class="py-4 text-center text-sm text-gray-500 border-t border-gray-200">
+        <div class="flex justify-center items-center gap-4">
+            <span>Version {{ app_version }}</span>
+            <span class="text-gray-300">|</span>
+            <div class="tooltip-container flex items-center gap-2">
+                <span id="processing-status-text" class="text-gray-500">
+                    Status: <span class="text-yellow-500">Checking...</span>
+                </span>
+                <div id="processing-status-indicator" class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <div id="processing-status-tooltip" class="tooltip tooltip-top">Checking...</div>
+            </div>
+            <span class="text-gray-300">|</span>
+            <span class="text-primary">&copy; <script>document.write(new Date().getFullYear())</script> MIRA</span>
+        </div>
+    </div>
+
+    <!-- Modal Component -->
+    {% include "modals/model_size_modal.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js_files %}
+<script>
+// Set up URLs for the JavaScript
+const projectsUrl = '{% url 'projects_open' %}';
+const apiDownloadSizeUrl = '{% url 'api_download_size' %}';
+const apiModelConfigUrl = '{% url 'api_model_config' %}';
+const apiDatasetConfigUrl = '{% url 'api_dataset_config' %}';
+const apiDatasetMetrics = '{% url 'api_dataset_metrics' %}';
+const apiTaskCustomDataset = '{% url 'api_get_tasks_from_dataset_readme' %}';
+
+// Pass models data from Django to JavaScript
+const modelsData = {{ modelsJson|safe }};
+
+// Pass datasets data from Django to JavaScript
+var datasetsData = {{ datasets|safe }};
+
+// Pass metrics data from Django to JavaScript
+const metricsData = {{ metrics|safe }};
+
+// Processing Service Status Check
+document.addEventListener('DOMContentLoaded', function() {
+    const statusText = document.getElementById('processing-status-text');
+    const statusIndicator = document.getElementById('processing-status-indicator');
+    const statusTooltip = document.getElementById('processing-status-tooltip');
+    
+    function updateProcessingStatus() {
+        // Add a timeout to the fetch request as well
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        fetch('{% url "api_status" %}', {
+            signal: controller.signal,
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => {
+                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                statusText.innerHTML = `Status: <span class="${getStatusColor(data.status)}">${data.status}</span>`;
+                statusTooltip.textContent = `${data.message || data.status}`;
+                
+                // Update indicator color
+                statusIndicator.className = 'w-2 h-2 rounded-full';
+                
+                if (data.status === 'Connected') {
+                    statusIndicator.classList.add('bg-green-500');
+                } else if (data.status === 'Disconnected') {
+                    statusIndicator.classList.add('bg-red-500');
+                } else {
+                    statusIndicator.classList.add('bg-yellow-500');
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                console.warn('Failed to check processing service status:', error);
+                
+                let errorMessage = 'Unknown error';
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Request timeout';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                statusText.innerHTML = 'Status: <span class="text-red-500">Error</span>';
+                statusTooltip.textContent = `${errorMessage}`;
+                statusIndicator.className = 'w-2 h-2 rounded-full bg-red-500';
+            });
+    }
+    
+    function getStatusColor(status) {
+        switch(status) {
+            case 'Connected': return 'text-green-500';
+            case 'Disconnected': return 'text-red-500';
+            default: return 'text-yellow-500';
+        }
+    }
+    
+    // Check status immediately on page load
+    updateProcessingStatus();
+    
+    // Check status every 60 seconds
+    setInterval(updateProcessingStatus, 60000);
+});
+</script>
+<script src="{% static 'js/wizard.js' %}"></script>
+{% endblock %}

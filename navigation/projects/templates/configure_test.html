@@ -1,0 +1,464 @@
+{% extends "head.html" %}
+
+{% load static %}
+
+{% block body %}
+<div class="flex flex-col h-screen">
+    <!-- Header Section -->
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <!-- Robot Icon -->
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-robot text-primary text-2xl"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1 class="text-xl font-semibold text-gray-900">
+                            Configure Test: {{ test.name }}
+                        </h1>
+                        <p class="text-sm text-gray-500">
+                            Project: {{ project.name }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'projects_show_test' project.id 'project' test.id %}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-1 overflow-hidden">
+        <div class="flex-1 overflow-auto p-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="max-w-4xl mx-auto px-6 py-8">
+                    <!-- Header Section -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-800">Configure Test</h1>
+                                <p class="text-gray-600 mt-2">Configure the settings and parameters for this test</p>
+                            </div>
+                            <div class="flex space-x-3 flex-shrink-0">
+                                <a href="{% url 'projects_show_test' project.id 'project' test.id %}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-arrow-left mr-2"></i>Back
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Form -->
+                    <form method="post" id="test-config-form" class="space-y-8">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                    <i class="fas fa-info-circle mr-3 text-blue-500"></i>
+                                    Basic Information
+                                </h2>
+                            </div>
+                            <div class="p-6 space-y-6">
+                                <!-- Test Name -->
+                                <div>
+                                    <label for="test_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Test Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" 
+                                        id="test_name" 
+                                        name="name" 
+                                        value="{{ test.name|default:'' }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                        required>
+                                </div>
+                                
+                                <!-- Description -->
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Description
+                                    </label>
+                                    <textarea id="description" 
+                                            name="description" 
+                                            rows="3"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            placeholder="Enter a description for this test...">{{ test.description|default:'' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dataset Selection Section -->
+                        {% if not test.diagnostic %}
+                            <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                                <div class="border-b border-gray-200 px-6 py-4">
+                                    <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                                        <i class="fas fa-database mr-3 text-green-500"></i>
+                                        Dataset Configuration
+                                    </h2>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <!-- Selected Datasets Display -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                                            Selected Datasets
+                                        </label>
+                                        <div id="selected-datasets-display" class="min-h-[2.5rem] p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                                            <div id="selected-datasets-list" class="flex flex-wrap gap-2">
+                                                <!-- Selected datasets will be inserted here -->
+                                            </div>
+                                            <div id="no-datasets-selected" class="text-center text-gray-500 text-sm">
+                                                No datasets selected
+                                            </div>
+                                        </div>
+                                        <!-- Hidden input for form submission -->
+                                        <input type="hidden" name="datasets_list" id="datasets_list" value="">
+                                    </div>
+                                    
+                                    <!-- Available Datasets -->
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-700 mb-3">Available Datasets</h3>
+                                        <div class="max-h-[400px] overflow-y-auto divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                                            {% for dataset_key, dataset in datasets.items %}
+                                            <label class="dataset-item group px-6 py-4 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between cursor-pointer relative">
+                                                <!-- Selection Indicator Bar -->
+                                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 transition-colors duration-200" id="dataset-bar-{{ dataset.name }}"></div>
+                                                
+                                                <!-- Checkbox Input -->
+                                                <input id="dataset-checkbox-{{ dataset.name }}" 
+                                                    type="checkbox" 
+                                                    name="datasets" 
+                                                    value="{{ dataset.name }}" 
+                                                    data-splits="{{ dataset.splits|join:',' }}" 
+                                                    class="hidden dataset-checkbox" 
+                                                    onchange="updateDatasetSelection(this)">
+
+                                                <div class="flex items-center">
+                                                    <i class="fa-solid fa-database {% cycle 'text-blue-500' 'text-green-500' 'text-purple-500' 'text-orange-500' 'text-pink-500' %} mr-3 ml-2"></i>
+                                                    <div>
+                                                        <div class="font-medium text-gray-900">{{ dataset.name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ dataset.description|default:"No description available" }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center relative">
+                                                    <i class="fas fa-info-circle text-gray-400 hover:text-gray-600 tooltip-trigger ml-2"
+                                                        data-tooltip-title="{{ dataset.name }}"
+                                                        data-tooltip-info='[{"label": "Splits", "value": "{{ dataset.splits|default:'Unknown'|escapejs }}"}, {"label": "Samples", "value": "{{ dataset.num_samples|default:'Unknown'|escapejs }}"}, {"label": "Tasks", "value": "{{ dataset.task_types|default:'Unknown'|escapejs }}"}, {"label": "Metrics", "value": "{{ dataset.metrics|default:'Unknown'|escapejs }}"}]'>
+                                                    </i>
+                                                </div>
+                                            </label>
+                                            {% empty %}
+                                            <div class="px-6 py-8 text-center text-gray-500">
+                                                <i class="fas fa-database text-4xl mb-4 text-gray-300"></i>
+                                                <p>No datasets found</p>
+                                                <p class="text-sm">Load a custom dataset or check your configuration.</p>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Submit Section -->
+                        <div class="flex items-center justify-between pt-6">
+                            <div class="text-sm text-gray-600">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Changes will be saved when you submit the form.
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <a href="{% url 'projects_show_test' project.id 'project' test.id %}"
+                                    class="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    Cancel
+                                </a>
+                                <button type="submit" 
+                                        class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200">
+                                    <i class="fas fa-save mr-2"></i>Save Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Configuration Page -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tooltip functionality
+        // Create a single generic tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'generic-info-tooltip';
+
+        const tooltipHeader = document.createElement('div');
+        tooltipHeader.className = 'tooltip-header';
+
+        const tooltipBody = document.createElement('div');
+        tooltipBody.className = 'tooltip-body';
+
+        tooltip.appendChild(tooltipHeader);
+        tooltip.appendChild(tooltipBody);
+        document.body.appendChild(tooltip);
+        
+        document.addEventListener('mouseenter', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('tooltip-trigger')) {
+                const title = e.target.getAttribute('data-tooltip-title') || 'Information';
+                const infoData = e.target.getAttribute('data-tooltip-info');
+                
+                // Set header
+                tooltipHeader.textContent = title;
+                
+                // Create structured content from data
+                let content = '';
+                try {
+                    if (infoData) {
+                        const info = JSON.parse(infoData);
+                        info.forEach(item => {
+                            // Parse array-like strings for better display
+                            let displayValue = item.value;
+                            
+                            // Check if the value looks like a stringified array
+                            if (typeof displayValue === 'string' && 
+                                ((displayValue.startsWith('[') && displayValue.endsWith(']')) || (displayValue.startsWith("['") && displayValue.endsWith("']")))) {
+                                try {
+                                    // Try to parse as JSON first
+                                    const parsed = JSON.parse(displayValue);
+                                    if (Array.isArray(parsed)) {
+                                        displayValue = parsed.join(', ');
+                                    }
+                                } catch {
+                                    // If JSON parsing fails, try to extract values manually
+                                    // Handle formats like "['test', 'train']" or "[test, train]"
+                                    const match = displayValue.match(/\[(.*)\]/);
+                                    if (match) {
+                                        const innerContent = match[1];
+                                        // Split by comma and clean up quotes
+                                        const items = innerContent.split(',').map(item => 
+                                            item.trim().replace(/^['"]|['"]$/g, '')
+                                        );
+                                        displayValue = items.join(', ');
+                                    }
+                                }
+                            }
+                            
+                            content += `
+                                <div class="info-item">
+                                    <span class="info-label">${item.label}:</span> 
+                                    <span class="info-value">${displayValue}</span>
+                                </div>
+                            `;
+                        });
+                    }
+                } catch (error) {
+                    // Fallback for old format (model tooltips)
+                    const size = e.target.getAttribute('data-model-size');
+                    const architecture = e.target.getAttribute('data-model-architecture');
+                    const vocab_size = e.target.getAttribute('data-model-vocab');
+                    
+                    if (size || architecture || vocab_size) {
+                        tooltipHeader.textContent = 'Model Information';
+                        content = `
+                            <div class="info-item">
+                                <span class="info-label">Size:</span> 
+                                <span class="info-value">${size || 'Unknown'} MB</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Architecture:</span> 
+                                <span class="info-value">${architecture || 'Unknown'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Vocab Size:</span> 
+                                <span class="info-value">${vocab_size || 'Unknown'}</span>
+                            </div>
+                        `;
+                    }
+                }
+                
+                tooltipBody.innerHTML = content || '<div class="info-item">No information available</div>';
+                tooltip.style.display = 'block';
+                
+                // Position tooltip to the right of the trigger
+                const rect = e.target.getBoundingClientRect();
+                tooltip.style.left = (rect.right + 32) + 'px';
+                tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
+            }
+        }, true);
+        
+        document.addEventListener('mouseleave', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('tooltip-trigger')) {
+                tooltip.style.display = 'none';
+            }
+        }, true);
+
+        // Form handling functionality
+        const form = document.getElementById('test-config-form');
+        
+        // Form submission (with double-submission prevention)
+        let isSubmitting = false;
+        form.addEventListener('submit', function(e) {
+            // Prevent double submission
+            if (isSubmitting) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Mark as submitting for normal form submission
+            isSubmitting = true;
+        });
+        
+        // Initial setup
+        // Initialize dataset selection
+        initializeDatasetSelection();
+    });
+
+    // Dataset selection functionality
+    function updateDatasetSelection(checkbox) {
+        const datasetName = checkbox.value;
+        const isSelected = checkbox.checked;
+        const selectionBar = document.getElementById(`dataset-bar-${datasetName}`);
+        
+        // Update visual indicator
+        if (isSelected) {
+            selectionBar.style.backgroundColor = '#8b5cf6'; // purple-500
+        } else {
+            selectionBar.style.backgroundColor = '#d1d5db'; // gray-300
+        }
+        
+        // Update selected datasets display
+        updateSelectedDatasetsDisplay();
+        
+        // Update hidden input
+        updateDatasetsHiddenInput();
+    }
+    
+    function updateSelectedDatasetsDisplay() {
+        const selectedDatasetsList = document.getElementById('selected-datasets-list');
+        const noDatasetsMessage = document.getElementById('no-datasets-selected');
+        const checkboxes = document.querySelectorAll('.dataset-checkbox:checked');
+        
+        // Clear current display
+        selectedDatasetsList.innerHTML = '';
+        
+        if (checkboxes.length === 0) {
+            noDatasetsMessage.style.display = 'block';
+        } else {
+            noDatasetsMessage.style.display = 'none';
+            
+            checkboxes.forEach(checkbox => {
+                const datasetName = checkbox.value;
+                const datasetTag = document.createElement('div');
+                datasetTag.className = 'flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm';
+                datasetTag.innerHTML = `
+                    <i class="fas fa-database text-xs"></i>
+                    <span>${datasetName}</span>
+                    <button type="button" onclick="removeDataset('${datasetName}')" class="text-green-600 hover:text-green-800 transition-colors">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                selectedDatasetsList.appendChild(datasetTag);
+            });
+        }
+    }
+    
+    function updateDatasetsHiddenInput() {
+        const checkboxes = document.querySelectorAll('.dataset-checkbox:checked');
+        const selectedDatasets = Array.from(checkboxes).map(cb => cb.value);
+        document.getElementById('datasets_list').value = selectedDatasets.join(', ');
+    }
+    
+    function removeDataset(datasetName) {
+        const checkbox = document.getElementById(`dataset-checkbox-${datasetName}`);
+        if (checkbox) {
+            checkbox.checked = false;
+            updateDatasetSelection(checkbox);
+        }
+    }
+    
+    function initializeDatasetSelection() {
+        // Initialize selected datasets from test's existing datasets property
+        try {
+            // Get the test's currently selected datasets from Django context
+            const testDatasets = {{ test.datasets|safe }};
+            
+            if (testDatasets && Array.isArray(testDatasets)) {
+                testDatasets.forEach(datasetName => {
+                    const checkbox = document.getElementById(`dataset-checkbox-${datasetName}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        updateDatasetSelection(checkbox);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error initializing dataset selection:', e);
+        }
+        
+        // Update the display regardless
+        updateSelectedDatasetsDisplay();
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+<!-- Tooltip Styles -->
+<style>
+.generic-info-tooltip {
+    position: absolute;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    max-width: 300px;
+    overflow: hidden;
+}
+
+.tooltip-header {
+    background: #f3f4f6;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tooltip-body {
+    padding: 12px;
+}
+
+.info-item {
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #6b7280;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-item strong {
+    color: #374151;
+}
+</style>
+{% endblock %}

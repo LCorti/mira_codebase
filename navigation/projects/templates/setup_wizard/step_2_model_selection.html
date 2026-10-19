@@ -1,0 +1,189 @@
+<!-- Step 1: Model Selection -->
+<div id="step-2" class="wizard-step hidden">
+    <div class="bg-white rounded-lg shadow-xl mb-8 border border-gray-300" id="available-models-container">
+        <!-- Collapsible Header -->
+        <div class="px-6 py-4 border-b border-gray-200 cursor-pointer" onclick="toggleAvailableModels()">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200 mr-3"
+                        id="available-models-toggle"
+                    >
+                        <i class="fa-solid fa-chevron-down text-sm" id="available-models-chevron"></i>
+                    </button>
+                    <h2 class="text-base font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">Available Models</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="available-models-content">
+            <!-- Model List -->
+            <div class="max-h-[240px] overflow-y-auto divide-y divide-gray-200">
+            {% for model_key, model in models.items %}
+            <!-- Model Item {{ forloop.counter }} -->
+            <label class="project-item group px-6 py-4 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between cursor-pointer relative">
+                <!-- Selection Indicator Bar -->
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 transition-colors duration-200 model-selection-bar {% if forloop.last %}rounded-bl-lg{% endif %}"></div>
+                
+                <!-- Hidden Radio Input -->
+                <input type="radio" name="selected_model" value="{{ model.name }}" class="hidden model-radio" onchange="updateSelectionIndicator(this)">
+                
+                <div>
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-brain {% cycle 'text-yellow-500' 'text-blue-500' 'text-green-500' 'text-purple-500' 'text-red-500' %} mr-3 ml-2"></i>
+                        <div>
+                            <h3 class="font-medium text-gray-800">{{ model.name }}</h3>
+                            <p class="text-sm text-gray-500">{{ model.type|default:"No type available" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="https://huggingface.co/{{ model.name }}" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        class="text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                        title="View on Hugging Face">
+                        <i class="fas fa-external-link-alt text-sm"></i>
+                    </a>
+                    <i class="fa-solid fa-circle-info text-gray-400 hover:text-primary cursor-pointer transition-colors duration-200 tooltip-trigger" 
+                        data-tooltip-title="Model Information"
+                        data-tooltip-info='[{"label": "Size", "value": "{{ model.size|default:'Unknown size'|escapejs }} MB"}, {"label": "Context Length", "value": "{{ model.max_position_embeddings|default:'Unknown'|escapejs }}"}, {"label": "Architecture", "value": "{{ model.architectures|join:', '|default:'No architectures available'|escapejs }}"}]'></i>
+                </div>
+            </label>
+            {% empty %}
+            <!-- No Models Message -->
+            <div class="px-6 py-8 text-center text-gray-500">
+                <i class="fas fa-folder-open text-4xl mb-4 text-gray-300"></i>
+                <p>No models found</p>
+                <p class="text-sm">Load in a custom model or check your configuration.</p>
+            </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Custom Model -->
+    <div id="custom-model-container" class="bg-white rounded-lg shadow-xl mb-8 border-2 border-dashed border-gray-300">
+        <!-- Custom Model Input -->
+        <div class="px-6 py-4">
+            <!-- Collapsible Title -->
+            <div class="flex items-center cursor-pointer" onclick="toggleCustomModel()">
+                <button 
+                    type="button"
+                    class="text-gray-400 hover:text-gray-600 transition-colors duration-200 mr-3"
+                    id="custom-model-toggle"
+                >
+                    <i class="fa-solid fa-chevron-right text-sm" id="custom-model-chevron"></i>
+                </button>
+                <h3 class="text-base font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">Load Custom Model From HuggingFace</h3>
+            </div>
+
+            <!-- Collapsible Content -->
+            <div id="custom-model-content" class="hidden mt-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex-1">
+                        <input 
+                            type="text" 
+                            id="custom_model" 
+                            name="custom_model"
+                            placeholder="meta-llama/Llama-3.1-8B-Instruct"
+                            class="w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-200"
+                        >
+                    </div>
+                    <div class="">
+                        <button 
+                            id="load-custom-model-btn" 
+                            type="button"
+                            class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                            onclick="loadCustomModel()"
+                        >
+                            <i class="fa-solid fa-download text-sm"></i>
+                            <span>Load</span>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Enter a valid HuggingFace model identifier to load a custom model.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Parameters Configuration -->
+    <div class="bg-white rounded-lg shadow-xl mb-8 border border-gray-300" id="model-parameters-container">
+        <!-- Collapsible Header -->
+        <div class="px-6 py-4 border-b border-gray-200 cursor-pointer" onclick="toggleModelParameters()">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200 mr-3"
+                        id="model-parameters-toggle"
+                    >
+                        <i class="fa-solid fa-chevron-right text-sm" id="model-parameters-chevron"></i>
+                    </button>
+                    <h2 class="text-base font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">Model Parameters</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="model-parameters-status" class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">Valid JSON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="model-parameters-content" class="hidden">
+            <!-- Info Section -->
+            <div class="px-6 py-3 bg-blue-50 border-b border-gray-100">
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-info-circle text-blue-500 mt-0.5"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium">Auto-generated from model configuration</p>
+                        <p class="text-blue-600">These parameters are automatically populated based on the selected model's configuration. You can customize them as needed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON Editor -->
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Model & Tokenizer Parameters (JSON)</label>
+                    <div class="flex items-center gap-2">
+                        <button 
+                        id="reset-model-parameters-btn"
+                        type="button" 
+                        class="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                        onclick="resetModelParameters(event)"
+                    >
+                        <i class="fa-solid fa-rotate-left mr-1"></i>
+                        Reset
+                    </button>
+                    </div>
+                </div>
+                
+                <textarea 
+                    id="model_parameters" 
+                    name="model_parameters"
+                    rows="15"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm bg-gray-50"
+                    placeholder='{"model": {"from_pretrained": {}, "inference": {}}, "tokenizer": {"from_pretrained": {}, "inference": {}}}'
+                    oninput="validateModelParametersJSON()"
+                ></textarea>
+                
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>Structure: {"model": {"from_pretrained": {...}, "inference": {...}}, "tokenizer": {"from_pretrained": {...}, "inference": {...}}}</p>
+                </div>
+                
+                <!-- JSON Validation Error Display -->
+                <div id="model-parameters-error" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-exclamation-triangle text-red-500 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-medium text-red-800">JSON Validation Error</p>
+                            <p id="model-parameters-error-text" class="text-sm text-red-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

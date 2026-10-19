@@ -1,0 +1,8 @@
+*.db
+
+venv/
+ENV/
+env/
+.venv/
+
+.ruff_cache/

@@ -1,0 +1,176 @@
+<!-- Step 4: Diagnostics -->
+<div id="step-4" class="wizard-step mb-8 hidden">
+    <!-- Info Message -->
+    <div class="mb-6 bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+        <div class="flex items-center">
+            <i class="fa-solid fa-info-circle text-purple-400 mr-3"></i>
+            <div class="text-sm text-purple-700 flex-1">
+                <p>
+                    <span class="font-medium">Getting started:</span> Select one method from each category to begin. You can add more methods to your project later.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible SK/RK Explanation -->
+    <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg overflow-hidden">
+        <button 
+            type="button"
+            onclick="toggleSkRkInfo()"
+            class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-100 transition-colors duration-200">
+            <div class="flex items-center">
+                <i class="fa-solid fa-book text-blue-400 mr-3"></i>
+                <span class="text-sm font-medium text-blue-700">Learn more about Should-Know & Really-Know methods</span>
+            </div>
+            <i id="sk-rk-chevron" class="fa-solid fa-chevron-down text-blue-400 transition-transform duration-200"></i>
+        </button>
+        <div id="sk-rk-info" class="hidden px-4 pb-4 pt-2">
+            <div class="text-sm text-blue-700 ml-9">
+                <span class="font-medium">Should-Know (SK) and Really-Know (RK)</span> methods help you understand different aspects of model behavior. 
+                SK methods test what the model should know to perform a task correctly, based on expected behavior or task requirements. 
+                RK methods reveal what the model actually relies on or attends to when producing outputs. 
+                Using both together helps you compare expected and observed behavior, providing a comprehensive view of model capabilities and limitations.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSkRkInfo() {
+            const infoBox = document.getElementById('sk-rk-info');
+            const chevron = document.getElementById('sk-rk-chevron');
+            infoBox.classList.toggle('hidden');
+            chevron.classList.toggle('fa-chevron-down');
+            chevron.classList.toggle('fa-chevron-up');
+        }
+    </script>
+    
+    <div class="grid grid-cols-2 gap-6">
+        <!-- Should-Know Methods -->
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200 relative">
+            <!-- Title -->
+            <div class="px-6 py-4 border-b border-gray-200 bg-blue-50">
+                <h2 class="text-lg font-medium text-blue-800 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    Should-Know Methods
+                </h2>
+                <p class="text-sm text-blue-600 mt-1">Select one method from this category</p>
+            </div>
+
+            <!-- Method List -->
+            <div class="max-h-[400px] overflow-y-auto divide-y divide-gray-200">
+                {% with should_know_count=0 %}
+                {% for test in tests %}
+                {% if test.metadata_parsed.diagnostic_tag == 'Should-Know' %}
+                {% with should_know_count=should_know_count|add:1 %}
+                <!-- Test Item {{ forloop.counter }} -->
+                <label class="test-item group px-6 py-4 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between cursor-pointer relative" data-tasks="{{ test.metadata_parsed.tasks|join:',' }}">
+                    <!-- Selection Indicator Bar -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 transition-colors duration-200 test-selection-bar"></div>
+                    
+                    <!-- Hidden Radio Input -->
+                    <input type="radio" name="should_know_test" value="{{ test.id }}" class="hidden test-radio" onchange="updateTestSelection(this, 'should-know')">
+                    
+                    <div>
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-flask-vial text-blue-500 mr-3 ml-2"></i>
+                            <div>
+                                <h3 class="font-medium text-gray-800">{{ test.name }}</h3>
+                                <p class="text-sm text-gray-500">{{ test.description|default:"No description available" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        {% if test.metadata_parsed.paper_source %}
+                        <a href="{{ test.metadata_parsed.paper_source }}" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="mr-2 text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                            title="View paper source"
+                            onclick="event.stopPropagation();">
+                            <i class="fa-solid fa-external-link text-sm"></i>
+                        </a>
+                        {% endif %}
+                        <i class="fa-solid fa-circle-info text-gray-400 hover:text-primary cursor-pointer transition-colors duration-200 test-metadata-trigger" 
+                            data-tooltip-title="Method Information"
+                            data-test-metadata="{{ test.metadata|default:'{}' }}"
+                            data-tooltip-info='[{% for method in test.methods %}{"label": "{{ method.name }}", "value": "{% for metric in method.metrics %}{{ metric }}{% if not forloop.last %}, {% endif %}{% empty %}No metrics{% endfor %}"}{% if not forloop.last %}, {% endif %}{% empty %}{"label": "No methods", "value": ""}{% endfor %}]'></i>
+                    </div>
+                </label>
+                {% endwith %}
+                {% endif %}
+                {% empty %}
+                <!-- No methods at all -->
+                <div class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-flask text-4xl mb-4 text-gray-300"></i>
+                    <p>No Should-Know methods found</p>
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- Really-Know Methods -->
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200 relative">
+            <!-- Title -->
+            <div class="px-6 py-4 border-b border-gray-200 bg-purple-50">
+                <h2 class="text-lg font-medium text-purple-800 flex items-center gap-2">
+                    <i class="fa-solid fa-star"></i>
+                    Really-Know Methods
+                </h2>
+                <p class="text-sm text-purple-600 mt-1">Select one method from this category</p>
+            </div>
+
+            <!-- Method List -->
+            <div class="max-h-[400px] overflow-y-auto divide-y divide-gray-200">
+                {% with really_know_count=0 %}
+                {% for test in tests %}
+                {% if test.metadata_parsed.diagnostic_tag == 'Really-Know' %}
+                {% with really_know_count=really_know_count|add:1 %}
+                <!-- Test Item {{ forloop.counter }} -->
+                <label class="test-item group px-6 py-4 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between cursor-pointer relative" data-tasks="{{ test.metadata_parsed.tasks|join:',' }}">
+                    <!-- Selection Indicator Bar -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 transition-colors duration-200 test-selection-bar"></div>
+                    
+                    <!-- Hidden Radio Input -->
+                    <input type="radio" name="really_know_test" value="{{ test.id }}" class="hidden test-radio" onchange="updateTestSelection(this, 'really-know')">
+                    
+                    <div>
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-flask-vial text-purple-500 mr-3 ml-2"></i>
+                            <div>
+                                <h3 class="font-medium text-gray-800">{{ test.name }}</h3>
+                                <p class="text-sm text-gray-500">{{ test.description|default:"No description available" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        {% if test.metadata_parsed.paper_source %}
+                        <a href="{{ test.metadata_parsed.paper_source }}" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="mr-2 text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                            title="View paper source"
+                            onclick="event.stopPropagation();">
+                            <i class="fa-solid fa-external-link text-sm"></i>
+                        </a>
+                        {% endif %}
+                        <i class="fa-solid fa-circle-info text-gray-400 hover:text-primary cursor-pointer transition-colors duration-200 test-metadata-trigger" 
+                            data-tooltip-title="Test Information"
+                            data-test-metadata="{{ test.metadata|default:'{}' }}"
+                            data-tooltip-info='[{% for method in test.methods %}{"label": "{{ method.name }}", "value": "{% for metric in method.metrics %}{{ metric }}{% if not forloop.last %}, {% endif %}{% empty %}No metrics{% endfor %}"}{% if not forloop.last %}, {% endif %}{% empty %}{"label": "No methods", "value": ""}{% endfor %}]'></i>
+                    </div>
+                </label>
+                {% endwith %}
+                {% endif %}
+                {% empty %}
+                <!-- No methods at all -->
+                <div class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-flask text-4xl mb-4 text-gray-300"></i>
+                    <p>No Really-Know methods found</p>
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>

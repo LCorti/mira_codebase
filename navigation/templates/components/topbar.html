@@ -1,0 +1,791 @@
+<!-- Top Navigation Component -->
+<div class="w-full bg-white border-b border-gray-200 py-2 flex items-center justify-between">
+    <div class="flex items-center">
+        <!-- Logo aligned with sidebar -->
+        <div class="w-16 flex items-center justify-center">
+            <a href="{% url 'projects_open' %}" class="flex items-center justify-center hover:opacity-75 transition-opacity">
+                <i class="fas fa-robot text-primary text-2xl"></i>
+            </a>
+        </div>
+        <h1 class="text-xl font-semibold text-gray-800 ml-4">
+            {% block page_title %}MIRA - Ready To Work{% endblock %}
+        </h1>
+        <div class="flex items-center space-x-2 text-sm ml-4">
+            <span class="px-2 py-1 bg-primary/10 text-primary rounded-full">{{ app_version }}</span>
+            <span class="text-gray-500">|</span>
+            <span id="connection-status-text" class="text-gray-500">
+                Processing Service: <span class="text-yellow-500">Checking...</span>
+            </span>
+            <div id="connection-status-indicator" class="w-2 h-2 rounded-full bg-yellow-500"></div>
+        </div>
+    </div>
+    <div class="flex items-center space-x-4 pr-6">
+        <!-- Notification Container -->
+        <div id="notification-container" class="flex items-center space-x-2">
+            <!-- Notifications will be inserted here -->
+        </div>
+        <!-- Queue Indicator -->
+        <div class="tooltip-container relative">
+            <button id="queue-indicator" class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors" onclick="toggleQueueModal()">
+                <i class="fas fa-tasks"></i>
+                <span id="queue-count" class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+            </button>
+            <div class="tooltip tooltip-bottom">Job Queue (<span id="queue-tooltip-count">0</span> jobs)</div>
+        </div>
+        <!-- New Project Button -->
+        <div class="tooltip-container">
+            <button class="w-10 h-10 flex items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20" onclick="window.location.href='{% url 'projects_create' %}'">
+                <i class="fas fa-plus"></i>
+            </button>
+            <div class="tooltip tooltip-bottom">New Project</div>
+        </div>
+        <!-- Help -->
+        <div class="tooltip-container">
+            <a class="w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 hover:text-primary transition-colors" href="https://github.com/delftcrowd/llm_diagnosis_toolkit" target="_blank" rel="noopener noreferrer">
+                <i class="fas fa-question-circle"></i>
+            </a>
+            <div class="tooltip tooltip-bottom">Help</div>
+        </div>
+    </div>
+</div>
+
+<!-- Queue Modal -->
+<div id="queue-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" onclick="toggleQueueModal()">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[70vh] overflow-hidden" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Job Queue</h3>
+                <button onclick="toggleQueueModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="queue-modal-content" class="p-4 overflow-y-auto max-h-[calc(70vh-8rem)]">
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-inbox text-4xl mb-4"></i>
+                    <p>No jobs in queue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Async Status Checking -->
+<script>
+    const apiGetJobsUrl = '{% url "api_get_jobs" %}';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusText = document.getElementById('connection-status-text');
+        const statusIndicator = document.getElementById('connection-status-indicator');
+        
+        function updateConnectionStatus() {
+            // Add a timeout to the fetch request as well
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            
+            fetch('{% url "api_status" %}', {
+                signal: controller.signal,
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    statusText.textContent = `Processing Service: ${data.status}`;
+                    statusText.title = data.message; // Show detailed message on hover
+                    
+                    // Update indicator color and status text color
+                    statusIndicator.className = 'w-2 h-2 rounded-full';
+                    statusText.className = 'text-gray-500';
+                    
+                    if (data.status === 'Connected') {
+                        statusIndicator.classList.add('bg-green-500');
+                    } else if (data.status === 'Disconnected') {
+                        statusIndicator.classList.add('bg-red-500');
+                        statusText.classList.add('text-red-500');
+                    } else {
+                        statusIndicator.classList.add('bg-yellow-500');
+                    }
+                })
+                .catch(error => {
+                    clearTimeout(timeoutId);
+                    console.warn('Failed to check service status:', error);
+                    
+                    let errorMessage = 'Unknown error';
+                    if (error.name === 'AbortError') {
+                        errorMessage = 'Request timeout';
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    
+                    statusText.textContent = 'Processing Service: Error';
+                    statusText.title = errorMessage;
+                    statusText.classList.add('text-red-500');
+                    statusIndicator.className = 'w-2 h-2 rounded-full bg-red-500';
+                });
+        }
+        
+        // Check status immediately on page load
+        updateConnectionStatus();
+        
+        // Check status every 60 seconds
+        setInterval(updateConnectionStatus, 60000);
+    });
+
+    // Queue Management
+    class QueueManager {
+        constructor() {
+            this.jobs = [];
+            this.queueIndicator = document.getElementById('queue-indicator');
+            this.queueCount = document.getElementById('queue-count');
+            this.queueTooltipCount = document.getElementById('queue-tooltip-count');
+            this.queueModal = document.getElementById('queue-modal');
+            this.queueModalContent = document.getElementById('queue-modal-content');
+            this.storageKey = 'mira_job_queue';
+            
+            // Load jobs from localStorage on initialization
+            this.loadFromStorage();
+        }
+
+        // Save jobs to localStorage
+        saveToStorage() {
+            try {
+                const jobsToStore = this.jobs.map(job => ({
+                    ...job,
+                    timestamp: job.timestamp.toISOString() // Convert Date to string for storage
+                }));
+                localStorage.setItem(this.storageKey, JSON.stringify(jobsToStore));
+            } catch (error) {
+                console.warn('Failed to save queue to localStorage:', error);
+            }
+        }
+
+        // Load jobs from localStorage and fetch their current status
+        async loadFromStorage() {
+            try {
+                const stored = localStorage.getItem(this.storageKey);
+                if (!stored) return;
+
+                const storedJobs = JSON.parse(stored);
+                
+                // Only load jobs that should still be active (not completed/failed/cancelled)
+                const potentiallyActiveJobs = storedJobs.filter(job => 
+                    job.status === 'queued' || 
+                    job.status === 'pending' || 
+                    job.status === 'processing'
+                );
+
+                if (potentiallyActiveJobs.length === 0) {
+                    localStorage.removeItem(this.storageKey);
+                    return;
+                }
+
+                // Restore jobs with Date objects
+                this.jobs = potentiallyActiveJobs.map(job => ({
+                    ...job,
+                    timestamp: new Date(job.timestamp)
+                }));
+
+                this.updateTopbarUI();
+
+                // Fetch current status of all loaded jobs
+                await this.batchUpdateJobStatuses();
+
+            } catch (error) {
+                console.warn('Failed to load queue from localStorage:', error);
+                localStorage.removeItem(this.storageKey);
+            }
+        }
+
+        addJob(jobData) {
+            // If jobData contains API response data with jobs array, process each job
+            if (jobData.jobs && Array.isArray(jobData.jobs)) {
+                const addedJobs = [];
+                jobData.jobs.forEach(apiJob => {
+                    const job = {
+                        methodId: apiJob.method_id, // Store methodId from API response
+                        id: apiJob.id,
+                        methodId: apiJob.method_id,
+                        methodName: jobData.methodName || `Method ${apiJob.method_id}`,
+                        testName: jobData.testName || 'Test',
+                        status: apiJob.status.toLowerCase(), // Convert to lowercase for consistency
+                        timestamp: new Date(),
+                        type: apiJob.type,
+                        parameters: apiJob.parameters,
+                        result_id: apiJob.result_id,
+                        status_message: apiJob.status_message,
+                        log: apiJob.log || [],
+                        logLength: (apiJob.log || []).length,
+                        hasNewLogs: false
+                    };
+                    
+                    this.jobs.push(job);
+                    addedJobs.push(job.id);
+                });
+                
+                this.saveToStorage();
+                this.updateTopbarUI();
+                
+                return addedJobs;
+            } else {
+                // Fallback for simple job data (for testing - should not be used in production)
+                const job = {
+                    id: this.generateJobId(),
+                    methodName: jobData.methodName || 'Unknown Method',
+                    testName: jobData.testName || 'Unknown Test',
+                    status: 'queued',
+                    timestamp: new Date(),
+                    log: [],
+                    ...jobData
+                };
+                
+                this.jobs.push(job);
+                // Update UI immediately
+                this.saveToStorage();
+                this.updateTopbarUI();
+                
+                return job.id;
+            }
+        }
+
+        pollJobStatus(jobId) {
+            // Poll job status every 3 seconds for pending/processing jobs
+            const pollInterval = setInterval(async () => {
+                const job = this.jobs.find(j => j.id === jobId);
+                if (!job || (job.status !== 'pending' && job.status !== 'processing')) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+                
+                try {
+                    // Fetch job status from the API using POST with job_ids array
+                    const response = await fetch(apiGetJobsUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                        },
+                        body: JSON.stringify({
+                            job_ids: [jobId]
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const responseData = await response.json();
+                    const jobsData = responseData.jobs || responseData; // Handle different response formats
+                    
+                    if (jobsData && jobsData.length > 0) {
+                        const apiJob = jobsData[0]; // Get the first (and only) job from the response
+                        
+                        // Update job with latest data from API
+                        job.status = apiJob.status.toLowerCase();
+                        job.status_message = apiJob.status_message || '';
+                        job.type = apiJob.type;
+                        job.parameters = apiJob.parameters;
+                        job.result = apiJob.result;
+                        job.result_id = apiJob.result_id; // Add result_id to the job data
+                        job.log = apiJob.log || job.log; // Update log if provided
+                        job.runtime = apiJob.runtime;
+                        job.created_at = new Date().toISOString();
+                        
+                        this.saveToStorage();
+                        this.updateTopbarUI();
+                        
+                        // If job is completed or failed, stop polling and remove after delay
+                        if (job.status === 'completed' || job.status === 'failed' || job.status === 'warning') {
+                            clearInterval(pollInterval);
+                            
+                            // Convert to camelCase for ContentManager
+                            const jobForContentManager = {
+                                id: apiJob.id,
+                                methodId: apiJob.method_id,
+                                status: apiJob.status,
+                                status_message: apiJob.status_message,
+                                type: apiJob.type,
+                                parameters: apiJob.parameters,
+                                result: apiJob.result,
+                                result_id: apiJob.result_id,
+                                log: apiJob.log,
+                                runtime: apiJob.runtime,
+                                created_at: apiJob.created_at
+                            };
+                            this.refreshDashboardContent(jobForContentManager);
+                            
+                            // Remove completed/failed jobs after a delay
+                            setTimeout(() => {
+                                this.removeJob(jobId);
+                            }, 10000); // Keep completed jobs visible for 10 seconds
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to poll job status for ${jobId}:`, error);
+                    
+                    // If polling fails multiple times, mark as failed
+                    if (!job.pollErrors) job.pollErrors = 0;
+                    job.pollErrors++;
+                    
+                    if (job.pollErrors >= 3) {
+                        console.error(`Stopping polling for job ${jobId} after 3 failed attempts`);
+                        job.status = 'failed';
+                        job.status_message = 'Failed to get job status';
+                        this.saveToStorage();
+                        this.updateTopbarUI();
+                        clearInterval(pollInterval);
+                        
+                        setTimeout(() => {
+                            this.removeJob(jobId);
+                        }, 5000);
+                    }
+                }
+            }, 3000); // Poll every 3 seconds
+        }
+
+        async refreshDashboardContent(job) {
+            // Check if we're on the dashboard page
+            if (typeof window.contentManager === 'undefined') {
+                return;
+            }
+            
+            // First, update the data in contentManager if it exists
+            if (window.contentManager && typeof window.contentManager.updateJobInData === 'function') {
+                window.contentManager.updateJobInData(job);
+            } else {
+                console.warn('ContentManager or updateJobInData method not available');
+                return;
+            }
+            
+            // Check if the dashboard is currently showing content related to this job
+            if (window.contentManager && window.contentManager.currentContent) {
+                const currentContent = window.contentManager.currentContent;
+                
+                let contentRefreshed = false;
+                
+                // If we're viewing a method and it matches this job's method
+                if (currentContent.type === 'method' && job.methodId === currentContent.id) {
+                    await window.contentManager.showMethodContent(currentContent.id, currentContent.testId);
+                    contentRefreshed = true;
+                }
+                // If we're viewing a test, check if any of its methods match this job
+                else if (currentContent.type === 'test') {
+                    const testData = window.contentManager.getTestById(currentContent.id);
+                    if (testData && testData.methods.some(m => m.id === job.methodId)) {
+                        await window.contentManager.showTestContent(currentContent.id);
+                        contentRefreshed = true;
+                    }
+                }
+                
+                // Show visual feedback if content was refreshed
+                if (contentRefreshed && typeof window.contentManager.showUpdateFeedback === 'function') {
+                    window.contentManager.showUpdateFeedback();
+                }
+            }
+        }
+
+        updateJobStatus(jobId, status) {
+            const job = this.jobs.find(j => j.id === jobId);
+            if (job) {
+                job.status = status;
+                this.saveToStorage();
+                this.updateTopbarUI();
+            }
+        }
+
+        removeJob(jobId) {
+            this.jobs = this.jobs.filter(j => j.id !== jobId);
+            this.saveToStorage();
+            this.updateTopbarUI();
+        }
+
+        updateTopbarUI() {
+            // Count all jobs that are not completed or failed (including pending, queued, processing)
+            const activeJobs = this.jobs.filter(j => 
+                j.status === 'queued' || 
+                j.status === 'pending' || 
+                j.status === 'processing'
+            );
+            const count = activeJobs.length;
+            
+            // Always show the queue indicator and count
+            this.queueIndicator.classList.remove('hidden');
+            this.queueCount.classList.remove('hidden');
+            this.queueCount.textContent = count;
+            this.queueTooltipCount.textContent = count;
+            
+            // Add pulse animation when there are active jobs
+            if (count > 0) {
+                this.queueIndicator.classList.add('has-jobs');
+            } else {
+                this.queueIndicator.classList.remove('has-jobs');
+            }
+            
+            this.updateTopbarModalContent();
+        }
+
+        updateTopbarModalContent() {
+            if (this.jobs.length === 0) {
+                this.queueModalContent.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>No jobs in queue</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const jobsHtml = this.jobs.map(job => {
+                const statusColors = {
+                    'pending': 'text-yellow-600 bg-yellow-100',
+                    'queued': 'text-yellow-600 bg-yellow-100',
+                    'processing': 'text-blue-600 bg-blue-100',
+                    'completed': 'text-green-600 bg-green-100',
+                    'warning': 'text-orange-600 bg-orange-100',
+                    'failed': 'text-red-600 bg-red-100',
+                    'cancelled': 'text-gray-600 bg-gray-100'
+                };
+                const statusIcons = {
+                    'pending': 'fa-clock',
+                    'queued': 'fa-clock',
+                    'processing': 'fa-spinner fa-spin',
+                    'completed': 'fa-check-circle',
+                    'warning': 'fa-exclamation-triangle',
+                    'failed': 'fa-times-circle',
+                    'cancelled': 'fa-ban'
+                };
+                
+                // Additional info for completed jobs with results
+                let resultInfo = '';
+                if (job.status === 'completed' && job.result && job.result.summary) {
+                    const summary = job.result.summary;
+                    const mainMetric = Object.keys(summary)[0]; // Get first metric (e.g., 'ndcg')
+                    if (mainMetric && summary[mainMetric].mean !== undefined) {
+                        const mean = (summary[mainMetric].mean * 100).toFixed(1);
+                        resultInfo = `<div class="text-xs text-green-600 mt-1">
+                            <i class="fas fa-chart-line mr-1"></i>
+                            ${mainMetric.toUpperCase()}: ${mean}%
+                        </div>`;
+                    }
+                }
+                
+                // Show most recent log for processing jobs
+                let logPreview = '';
+                if ((job.status === 'processing' || job.status === 'pending') && job.log && job.log.length > 0) {
+                    const recentLog = job.log[job.log.length - 1];
+                    const logText = recentLog.message || recentLog;
+                    const truncatedLog = logText.length > 80 ? logText.substring(0, 80) + '...' : logText;
+                    const newLogDot = job.hasNewLogs ? '<span class="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-1" title="New logs available"></span>' : '';
+                    logPreview = `<div class="text-xs text-gray-500 mt-1 italic cursor-pointer hover:text-blue-600 transition-colors group" onclick="viewJobLogs('${job.id}')" title="Click to view full logs">
+                        ${newLogDot}<i class="fas fa-terminal mr-1 group-hover:text-blue-600"></i><span class="group-hover:underline">${truncatedLog}</span>
+                    </div>`;
+                }
+                
+                return `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg mb-2">
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">${job.methodName}</div>
+                            <div class="text-sm text-gray-500">${job.testName}</div>
+                            <div class="text-xs text-gray-400">
+                                ${job.timestamp.toLocaleTimeString()}
+                                ${job.methodId ? ` • ID: ${job.methodId.substring(0, 8)}...` : ''}
+                            </div>
+                            ${job.status_message && job.status_message.trim() ? 
+                                `<div class="text-xs text-gray-500 mt-1">${job.status_message}</div>` : 
+                                ''
+                            }
+                            ${logPreview}
+                            ${resultInfo}
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[job.status]}">
+                                <i class="fas ${statusIcons[job.status]} mr-1"></i>
+                                ${job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                            </span>
+                            ${job.status === 'pending' || job.status === 'processing' || job.status === 'queued' ? 
+                                `<button onclick="cancelJob('${job.id}')" class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors" title="Cancel Job">
+                                    <i class="fas fa-times"></i>
+                                </button>` : ''
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            this.queueModalContent.innerHTML = jobsHtml;
+        }
+
+        generateJobId() {
+            return 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Batch update all pending/processing jobs
+        async batchUpdateJobStatuses() {
+            const activeJobs = this.jobs.filter(j => 
+                j.status === 'pending' || 
+                j.status === 'processing' || 
+                j.status === 'queued'
+            );
+            if (activeJobs.length === 0) return;
+            
+            const jobIds = activeJobs.map(j => j.id);
+
+            try {
+                const response = await fetch(apiGetJobsUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'), // Django CSRF protection
+                    },
+                    body: JSON.stringify({
+                        job_ids: jobIds
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const responseData = await response.json();
+                const jobsData = responseData.jobs || responseData; // Handle different response formats
+                const notFoundJobs = responseData.not_found || [];
+                
+                // Remove jobs that no longer exist in the backend
+                if (notFoundJobs.length > 0) {
+                    notFoundJobs.forEach(jobId => {
+                        this.removeJob(jobId);
+                    });
+                }
+                
+                // Use for...of instead of forEach to allow await
+                for (const apiJob of jobsData) {
+                    const job = this.jobs.find(j => j.id === apiJob.id);
+                    if (job) {
+                        const oldStatus = job.status;
+                        const oldLogLength = job.logLength || 0;
+                        job.status = apiJob.status.toLowerCase();
+                        job.status_message = apiJob.status_message || '';
+                        job.type = apiJob.type;
+                        job.parameters = apiJob.parameters;
+                        job.result = apiJob.result;
+                        job.result_id = apiJob.result_id; // Add result_id to the job data
+                        job.log = apiJob.log || job.log; // Update log if provided
+                        job.logLength = (apiJob.log || []).length;
+                        job.runtime = apiJob.runtime;
+                        job.created_at = new Date().toISOString();
+                        
+                        // Track new logs
+                        if (job.logLength > oldLogLength) {
+                            job.hasNewLogs = true;
+                            // Notify ContentManager if job modal is open for this job
+                            if (window.contentManager && window.contentManager.currentJobInModal === job.id) {
+                                window.contentManager.notifyNewLogs(job.id);
+                            }
+                        }
+                        
+                        // If status changed, trigger dashboard refresh
+                        if (oldStatus !== job.status) {
+                            // Convert to camelCase for ContentManager
+                            const jobForContentManager = {
+                                id: apiJob.id,
+                                methodId: apiJob.method_id,
+                                status: apiJob.status,
+                                status_message: apiJob.status_message,
+                                type: apiJob.type,
+                                parameters: apiJob.parameters,
+                                result: apiJob.result,
+                                result_id: apiJob.result_id,
+                                log: apiJob.log,
+                                runtime: apiJob.runtime,
+                                created_at: apiJob.created_at
+                            };
+                            await this.refreshDashboardContent(jobForContentManager);
+                            
+                            // Schedule removal only for terminal states
+                            if (job.status === 'completed' || job.status === 'failed' || job.status === 'warning' || job.status === 'cancelled') {
+                                setTimeout(() => {
+                                    this.removeJob(job.id);
+                                }, 10000);
+                            }
+                        }
+                    }
+                }
+                
+                this.saveToStorage();
+                this.updateTopbarUI();
+                
+            } catch (error) {
+                console.warn('Failed to batch update job statuses:', error);
+            }
+        }
+
+        // Start global polling for all jobs
+        startGlobalPolling() {
+            // Poll every 3 seconds for all active jobs
+            setInterval(() => {
+                this.batchUpdateJobStatuses();
+            }, 3000);
+        }
+    }
+
+    // Global queue manager instance
+    window.queueManager = new QueueManager();
+    
+    // Start global polling for job status updates
+    window.queueManager.startGlobalPolling();
+
+    // Helper function for CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function toggleQueueModal() {
+        const modal = document.getElementById('queue-modal');
+        modal.classList.toggle('hidden');
+    }
+
+    // View job logs - opens job details modal to logs tab
+    async function viewJobLogs(jobId) {
+        // Close queue modal
+        toggleQueueModal();
+        
+        // Find the job in queue manager
+        const job = window.queueManager.jobs.find(j => j.id === jobId);
+        if (!job) {
+            console.error('Job not found:', jobId);
+            return;
+        }
+        
+        // Clear the new logs indicator
+        job.hasNewLogs = false;
+        window.queueManager.saveToStorage();
+        window.queueManager.updateTopbarUI();
+        
+        // Open job details modal if ContentManager is available
+        if (window.contentManager && typeof window.contentManager.findJobById === 'function') {
+            const fullJob = window.contentManager.findJobById(jobId);
+            if (fullJob) {
+                // Find the test this job belongs to
+                const test = window.contentManager.findTestByJobId(jobId);
+                
+                // Initialize tab handlers FIRST (this is what was missing!)
+                window.contentManager.initializeJobDetailTabs(test);
+                
+                // Then populate the modal content (this may take time due to tag loading)
+                await window.contentManager.populateJobModalContent(fullJob);
+                
+                // Show modal
+                document.getElementById('job-details-modal').classList.remove('hidden');
+                
+                // Switch to logs tab
+                setTimeout(() => {
+                    const logsTab = document.querySelector('.job-detail-tab-btn[data-tab="logs"]');
+                    if (logsTab) {
+                        logsTab.click();
+                    }
+                }, 50);
+            } else {
+                console.error('Job not found in ContentManager:', jobId);
+            }
+        } else {
+            console.error('ContentManager not available');
+        }
+    }
+
+    // Cancel a job
+    async function cancelJob(jobId) {
+        try {
+            const response = await fetch('{% url "api_cancel_job" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    job_id: jobId
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Update the job status in the queue manager
+                if (window.queueManager) {
+                    const job = window.queueManager.jobs.find(j => j.id === jobId);
+                    if (job) {
+                        job.status = 'cancelled';
+                        
+                        // Refresh dashboard content to reflect cancellation
+                        const jobForContentManager = {
+                            id: job.id,
+                            methodId: job.methodId,
+                            status: 'cancelled',
+                            status_message: 'Job was cancelled by user request',
+                            type: job.type,
+                            parameters: job.parameters,
+                            result: job.result,
+                            result_id: job.result_id,
+                            log: job.log,
+                            runtime: job.runtime,
+                            created_at: job.created_at
+                        };
+                        await window.queueManager.refreshDashboardContent(jobForContentManager);
+                        
+                        window.queueManager.saveToStorage();
+                        window.queueManager.updateTopbarUI();
+                    }
+                }
+
+                // Remove the job after a short delay
+                setTimeout(() => {
+                    if (window.queueManager) {
+                        window.queueManager.removeJob(jobId);
+                    }
+                }, 5000); // Keep cancelled jobs visible for 5 seconds
+                
+            } else {
+                const errorData = await response.json();
+                console.error('Failed to cancel job:', errorData);
+                alert('Failed to cancel job: ' + (errorData.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error cancelling job:', error);
+            alert('Error cancelling job: ' + error.message);
+        }
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('queue-modal');
+        if (event.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('queue-modal');
+            if (!modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
+        }
+    });
+</script>

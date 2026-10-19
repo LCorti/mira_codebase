@@ -1,0 +1,12 @@
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+.venv
+.ENV
+.env
+
+# Ruff
+.ruff_cache/
+.ruff_cache

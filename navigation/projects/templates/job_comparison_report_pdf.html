@@ -1,0 +1,741 @@
+{% load comparison_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report_title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #1f2937;
+            background: white;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 3px solid #8b5cf6;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        
+        .header .meta {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        /* Section Styles */
+        .section {
+            margin-bottom: 30px;
+            break-inside: avoid;
+        }
+        
+        .section-header {
+            background: #8b5cf6;
+            color: white;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .section-content {
+            padding: 0 16px;
+        }
+        
+        /* Executive Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8b5cf6;
+            margin-bottom: 5px;
+        }
+        
+        .summary-card .label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+        
+        /* Job Overview */
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .job-card {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        
+        .job-card .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .job-card .job-id {
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .job-card .job-status {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-failed { background: #fecaca; color: #991b1b; }
+        .status-running { background: #dbeafe; color: #1e40af; }
+        
+        .job-card .job-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 11px;
+        }
+        
+        .job-card .detail-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .job-card .detail-label {
+            color: #6b7280;
+        }
+        
+        .job-card .detail-value {
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        /* Performance Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        
+        .metric-card .metric-name {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .metric-card .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .metric-card .metric-job {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+        
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 10px;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        
+        .comparison-table th {
+            background: #f9fafb;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .comparison-table .sample-header {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+        
+        .comparison-table .input-cell {
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+        
+        .comparison-table .output-cell {
+            max-width: 250px;
+            word-wrap: break-word;
+        }
+        
+        .comparison-table .reference-cell {
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+        
+        .comparison-table .metrics-cell {
+            min-width: 100px;
+        }
+        
+        .metric-value-display {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 9px;
+            color: white;
+            margin: 1px;
+        }
+        
+        /* Color coding for metrics */
+        .metric-excellent { background-color: #059669; }
+        .metric-very-good { background-color: #10b981; }
+        .metric-good { background-color: #0891b2; }
+        .metric-medium { background-color: #d97706; }
+        .metric-poor { background-color: #dc2626; }
+        
+        /* Tags styles */
+        .job-tags {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .tag-item {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: bold;
+            margin: 1px 2px;
+            color: white;
+        }
+        
+        .tag-symptom { background-color: #dc2626; }
+        .tag-sign { background-color: #ea580c; }
+        .tag-failure-pattern { background-color: #7c3aed; }
+        .tag-default { background-color: #6b7280; }
+        
+        /* Text utilities */
+        .text-truncate {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .text-wrap {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        /* Print optimizations */
+        @media print {
+            body { font-size: 10px; }
+            .section { page-break-inside: avoid; }
+            .comparison-table { font-size: 8px; }
+            h1 { font-size: 20px; }
+            h2 { font-size: 14px; }
+            h3 { font-size: 12px; }
+        }
+        
+        /* Page break utilities */
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>{{ report_title }}</h1>
+            <div class="subtitle">
+                Project: <strong>{{ project.name }}</strong> | 
+                Task Type: <strong>{{ task_type }}</strong>
+            </div>
+            <div class="meta">
+                Generated on {{ generated_at|date:"F d, Y \a\t H:i" }} | 
+                {{ selected_jobs_count }} jobs compared across {{ max_samples }} samples
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section">
+            <div class="section-header">Executive Summary</div>
+            <div class="section-content">
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="value">{{ selected_jobs_count }}</div>
+                        <div class="label">Jobs Compared</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="value">{{ max_samples }}</div>
+                        <div class="label">Test Samples</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="value">{{ task_type|title }}</div>
+                        <div class="label">Task Type</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Overview -->
+        <div class="section">
+            <div class="section-header">Job Overview</div>
+            <div class="section-content">
+                <div class="jobs-grid">
+                    {% for job in jobs %}
+                        <div class="job-card">
+                            <div class="job-header">
+                                <div class="job-id">Job #{{ job.id|slice:":8" }}</div>
+                                <div class="job-status status-{{ job.status|lower }}">{{ job.status }}</div>
+                            </div>
+                            <div class="job-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Created:</span>
+                                    <span class="detail-value">{{ job.created_at|date:"M d, H:i" }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Runtime:</span>
+                                    <span class="detail-value">{{ job.runtime|default:"N/A" }}s</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Type:</span>
+                                    <span class="detail-value">{{ job.type|default:"FULL" }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Samples:</span>
+                                    <span class="detail-value">
+                                        {% if job.result.results %}{{ job.result.results|length }}{% else %}0{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            {% if job.tags %}
+                                <div class="job-tags">
+                                    <div style="font-size: 10px; font-weight: bold; color: #374151; margin-bottom: 4px;">Diagnostic Tags:</div>
+                                    {% for tag in job.tags %}
+                                        <span class="tag-item 
+                                            {% if tag.category == 'Symptom' %}tag-symptom
+                                            {% elif tag.category == 'Sign' %}tag-sign
+                                            {% elif tag.category == 'Failure Pattern' %}tag-failure-pattern
+                                            {% else %}tag-default{% endif %}"
+                                            title="{{ tag.description }}">
+                                            {{ tag.name }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagnostics Summary -->
+        {% if jobs|jobs_have_diagnostics %}
+        <div class="section">
+            <div class="section-header">Diagnostics Summary</div>
+            <div class="section-content">
+                {% for job in jobs %}
+                    {% if job.result.diagnostics %}
+                        <div class="no-break" style="margin-bottom: 15px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 4px;">
+                            <h3 style="font-size: 12px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">
+                                Job #{{ job.id|slice:":8" }}
+                                <span style="font-weight: normal; color: #6b7280; font-size: 10px;">
+                                    ({{ job.created_at|date:"M d, H:i" }})
+                                </span>
+                            </h3>
+                            {% for diagnostic_name, diagnostic_data in job.result.diagnostics.items %}
+                                <div style="margin-bottom: 12px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                    <div style="margin-bottom: 6px;">
+                                        <span style="display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 9px; font-weight: bold; background-color: #2563eb; color: white; margin-right: 6px;">
+                                            {{ diagnostic_name|upper }}
+                                        </span>
+                                        <span style="font-size: 9px; color: #6b7280;">
+                                            {% if diagnostic_data|get_type == 'list' %}
+                                                Token-level analysis ({{ diagnostic_data|length }} tokens)
+                                            {% else %}
+                                                Dataset-level report
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if diagnostic_data|get_type == 'list' %}
+                                        <div style="padding: 6px; background: white; border: 1px solid #e5e7eb; border-radius: 2px; font-size: 8px;">
+                                            <strong>Token relevance (first sample):</strong><br>
+                                            {% for token_data in diagnostic_data|slice:":1" %}
+                                                {% for token, score in token_data.items|slice:":50" %}
+                                                    <span style="display: inline-block; padding: 1px 2px; margin: 1px; border-radius: 2px; background-color: {{ score|lxt_token_color }}; color: {{ score|lxt_text_color }};" 
+                                                          title="Score: {{ score|floatformat:4 }}">{{ token }}</span>
+                                                {% endfor %}
+                                                {% if token_data.items|length > 50 %}
+                                                    <span style="color: #9ca3af; font-style: italic;">... and {{ token_data.items|length|add:"-50" }} more tokens</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if diagnostic_data|length > 1 %}
+                                                <div style="color: #6b7280; margin-top: 4px; font-style: italic;">
+                                                    ... and {{ diagnostic_data|length|add:"-1" }} more samples
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div style="padding: 6px; background: white; border: 1px solid #e5e7eb; border-radius: 2px;">
+                                            <pre style="font-size: 8px; color: #374151; white-space: pre-wrap; margin: 0;">{{ diagnostic_data|truncatechars:1000 }}</pre>
+                                            {% if diagnostic_data|length > 1000 %}
+                                                <div style="font-size: 8px; color: #9ca3af; margin-top: 4px;">
+                                                    Report truncated for PDF display.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Performance Metrics Summary -->
+        {% if jobs.0.result.summary %}
+        <div class="section">
+            <div class="section-header">Performance Metrics Summary</div>
+            <div class="section-content">
+                {% for metric_name, metric_data in jobs.0.result.summary.items %}
+                <div class="no-break">
+                    <h3 style="margin: 15px 0 10px 0; font-size: 14px; color: #374151;">{{ metric_name|title }}</h3>
+                    <div class="metrics-grid">
+                        {% for job in jobs %}
+                            <div class="metric-card">
+                                <div class="metric-name">Job #{{ job.id|slice:":8" }}</div>
+                                {% if job.result.summary and metric_name in job.result.summary %}
+                                    <div class="metric-value" style="color: #059669;">
+                                        {{ job.result.summary|get_item:metric_name|get_item:"mean"|floatformat:3 }}
+                                    </div>
+                                    <div class="metric-job">
+                                        Mean (σ={{ job.result.summary|get_item:metric_name|get_item:"std"|floatformat:3 }})
+                                    </div>
+                                {% else %}
+                                    <div class="metric-value" style="color: #9ca3af;">N/A</div>
+                                    <div class="metric-job">No data</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tags Overview -->
+        {% if jobs|jobs_have_tags %}
+        <div class="section">
+            <div class="section-header">Diagnostic Tags Overview</div>
+            <div class="section-content">
+                {% for job in jobs %}
+                    {% if job.tags %}
+                        <div class="no-break" style="margin-bottom: 15px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 4px;">
+                            <h3 style="font-size: 12px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">
+                                Job #{{ job.id|slice:":8" }}
+                                <span style="font-weight: normal; color: #6b7280; font-size: 10px;">
+                                    ({{ job.created_at|date:"M d, H:i" }})
+                                </span>
+                            </h3>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                {% for tag in job.tags %}
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; font-size: 9px;">
+                                        <div style="margin-bottom: 3px;">
+                                            <span class="tag-item 
+                                                {% if tag.category == 'Symptom' %}tag-symptom
+                                                {% elif tag.category == 'Sign' %}tag-sign
+                                                {% elif tag.category == 'Failure Pattern' %}tag-failure-pattern
+                                                {% else %}tag-default{% endif %}" 
+                                                style="margin-right: 4px;">{{ tag.category }}</span>
+                                            <span style="font-weight: bold; color: #1f2937;">{{ tag.name }}</span>
+                                        </div>
+                                        {% if tag.description %}
+                                            <div style="color: #6b7280; font-size: 8px; margin-bottom: 2px;">{{ tag.description|truncatechars:80 }}</div>
+                                        {% endif %}
+                                        {% if tag.paper_reference %}
+                                            <a href="{{ tag.paper_reference }}" target="_blank" 
+                                                style="color: #3b82f6; font-size: 8px; margin-bottom: 2px; display: inline-block;">
+                                                Paper: {{ tag.paper_reference|truncatechars:80 }}
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Detailed Results -->
+        <div class="section page-break">
+            <div class="section-header">Detailed Comparison Results</div>
+            <div class="section-content">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">Sample</th>
+                            <th style="width: 20%;">Input</th>
+                            {% if task_type == "text-retrieval" %}
+                                <th style="width: 25%;">Retrieved Documents</th>
+                            {% endif %}
+                            {% for job in jobs %}
+                                <th style="width: {% widthratio 50 jobs|length 1 %}%;">
+                                    Job #{{ job.id|slice:":8" }} Output
+                                </th>
+                            {% endfor %}
+                            <th style="width: 20%;">Reference</th>
+                            <th style="width: 10%;">Metrics</th>
+                            <th style="width: 8%;">Diagnostic Tags</th>
+                            <th style="width: 12%;">Diagnostics</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sample_idx in samples_range %}
+                            <tr class="no-break">
+                                <td class="sample-header">{{ sample_idx|add:1 }}</td>
+                                
+                                <!-- Input -->
+                                <td class="input-cell text-wrap">
+                                    {% for job in jobs %}
+                                        {% if job.result.results and sample_idx < job.result.results|length %}
+                                            {{ job.result.results|get_item:sample_idx|get_item:"input"|truncatechars:200 }}
+                                        {% endif %}
+                                    {% empty %}
+                                        <span style="color: #9ca3af; font-style: italic;">No input</span>
+                                    {% endfor %}
+                                </td>
+                                
+                                <!-- Retrieved Documents (for text-retrieval) -->
+                                {% if task_type == "text-retrieval" %}
+                                <td class="text-wrap" style="font-size: 9px;">
+                                    {% for job in jobs %}
+                                        {% if job.result.results and sample_idx < job.result.results|length %}
+                                            {% with job.result.results|get_item:sample_idx as result %}
+                                                {% if result.documents %}
+                                                    {% for doc in result.documents|slice:":3" %}
+                                                        <div style="margin-bottom: 8px; padding: 4px; background: #f8fafc; border-left: 2px solid #e2e8f0;">
+                                                            <strong>Doc {{ forloop.counter }}:</strong> {{ doc.text|truncatechars:100 }}
+                                                            {% if doc.bm25_score %}
+                                                                <br><span style="color: #6b7280;">BM25: {{ doc.bm25_score|floatformat:3 }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endfor %}
+                                                    {% if result.documents|length > 3 %}
+                                                        <div style="color: #9ca3af; font-style: italic;">
+                                                            ... and {{ result.documents|length|add:"-3" }} more documents
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                {% endif %}
+                                
+                                <!-- Job Outputs -->
+                                {% for job in jobs %}
+                                <td class="output-cell text-wrap">
+                                    {% if job.result.results and sample_idx < job.result.results|length %}
+                                        {% with job.result.results|get_item:sample_idx as result %}
+                                            {{ result.prediction|default:"No output"|truncatechars:300 }}
+                                        {% endwith %}
+                                    {% else %}
+                                        <span style="color: #9ca3af; font-style: italic;">No result</span>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                
+                                <!-- Reference -->
+                                <td class="reference-cell text-wrap">
+                                    {% for job in jobs %}
+                                        {% if job.result.results and sample_idx < job.result.results|length %}
+                                            {% with job.result.results|get_item:sample_idx as result %}
+                                                {{ result.reference|default:"No reference"|truncatechars:200 }}
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                
+                                <!-- Metrics -->
+                                <td class="metrics-cell">
+                                    {% for job in jobs %}
+                                        {% if job.result.results and sample_idx < job.result.results|length %}
+                                            {% with job.result.results|get_item:sample_idx as result %}
+                                                {% if result.metrics %}
+                                                    <div style="margin-bottom: 5px;">
+                                                        <strong>Job {{ forloop.counter }}:</strong><br>
+                                                        {% for metric_name, metric_value in result.metrics.items %}
+                                                            <span class="metric-value-display" 
+                                                                style="background-color: {{ metric_value|dynamic_metric_color:metric_thresholds }};">
+                                                                {{ metric_name|slice:":8" }}: {{ metric_value|floatformat:3 }}
+                                                            </span>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                
+                                <!-- Tags -->
+                                <td class="text-wrap" style="font-size: 9px;">
+                                    {% for job in jobs %}
+                                        {% if job.tags %}
+                                            <div style="margin-bottom: 5px;">
+                                                <strong>Job {{ forloop.counter }}:</strong><br>
+                                                {% for tag in job.tags %}
+                                                    <span class="tag-item 
+                                                        {% if tag.category == 'Symptom' %}tag-symptom
+                                                        {% elif tag.category == 'Sign' %}tag-sign
+                                                        {% elif tag.category == 'Failure Pattern' %}tag-failure-pattern
+                                                        {% else %}tag-default{% endif %}"
+                                                        title="{{ tag.description }}">
+                                                        {{ tag.name }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not jobs|jobs_have_tags %}
+                                        <span style="color: #9ca3af; font-style: italic;">No tags</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Diagnostics -->
+                                <td class="text-wrap" style="font-size: 8px;">
+                                    {% for job in jobs %}
+                                        {% if job.result.diagnostics %}
+                                            <div style="margin-bottom: 5px;">
+                                                <strong>Job {{ forloop.counter }}:</strong><br>
+                                                {% for diagnostic_name, diagnostic_data in job.result.diagnostics.items %}
+                                                    <div style="margin-bottom: 3px; padding: 2px; border: 1px solid #e5e7eb; border-radius: 2px;">
+                                                        <span style="font-weight: bold; color: #2563eb;">{{ diagnostic_name|upper }}:</span>
+                                                        {% if diagnostic_data|get_type == 'list' %}
+                                                            {% if diagnostic_data and sample_idx < diagnostic_data|length %}
+                                                                {% with diagnostic_data|get_item:sample_idx as token_data %}
+                                                                    {% if token_data %}
+                                                                        <br>
+                                                                        {% for token, score in token_data.items|slice:":10" %}
+                                                                            <span style="display: inline-block; padding: 1px; margin: 1px; border-radius: 1px; background-color: {{ score|lxt_token_color }}; color: {{ score|lxt_text_color }}; font-size: 7px;">{{ token }}</span>
+                                                                        {% endfor %}
+                                                                        {% if token_data.items|length > 10 %}
+                                                                            <span style="color: #9ca3af;">...</span>
+                                                                        {% endif %}
+                                                                    {% else %}
+                                                                        <br><span style="color: #9ca3af;">No sample data</span>
+                                                                    {% endif %}
+                                                                {% endwith %}
+                                                            {% else %}
+                                                                <span style="color: #9ca3af;">No sample</span>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <br><span style="font-size: 7px;">{{ diagnostic_data|truncatechars:100 }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not jobs|jobs_have_diagnostics %}
+                                        <span style="color: #9ca3af; font-style: italic;">No diagnostics</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated by MIRA Diagnosis Toolkit on {{ generated_at|date:"F d, Y \a\t H:i" }}</p>
+        </div>
+    </div>
+</body>
+</html>

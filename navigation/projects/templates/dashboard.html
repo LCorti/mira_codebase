@@ -1,0 +1,864 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load url_helpers %}
+
+{% block title %}Dashboard - MIRA - Ready To Work{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Screen - VS Code Style -->
+<div id="welcome-screen" class="flex items-center justify-center min-h-full">
+    <div class="max-w-5xl w-full text-center px-6">
+        <!-- Large Robot Logo -->
+        <div class="mb-8">
+            <i class="fas fa-robot text-8xl text-primary opacity-80"></i>
+        </div>
+
+        <!-- Welcome Message -->
+        <h1 class="text-3xl font-light text-gray-800 mb-2">MIRA Diagnosis Toolkit</h1>
+        <p class="text-lg text-gray-600 mb-12">Welcome to your LLM diagnosis workspace</p>
+
+        <!-- Quick Actions Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <!-- Project Management -->
+            <div class="group cursor-pointer" onclick="activateSidebarSection('project')">
+                <div
+                    class="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-primary/30 transition-all duration-200 h-full flex flex-col">
+                    <div class="flex-shrink-0 mb-4">
+                        <i class="fas fa-diagram-project text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800 mb-2 truncate">Projects</h3>
+                    <p class="text-sm text-gray-600 flex-grow line-clamp-2">Manage your project and test suites</p>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="group cursor-pointer" onclick="activateSidebarSection('search')">
+                <div
+                    class="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-primary/30 transition-all duration-200 h-full flex flex-col">
+                    <div class="flex-shrink-0 mb-4">
+                        <i class="fas fa-search text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800 mb-2 truncate">Search</h3>
+                    <p class="text-sm text-gray-600 flex-grow line-clamp-2">Find tests, methods, and results across
+                        projects</p>
+                </div>
+            </div>
+
+            <!-- Diagnosis -->
+            {% comment %} <div class="group cursor-pointer" onclick="activateSidebarSection('diagnosis')">
+                <div
+                    class="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-primary/30 transition-all duration-200 h-full flex flex-col">
+                    <div class="flex-shrink-0 mb-4">
+                        <i class="fas fa-bug text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800 mb-2 truncate">Diagnostics</h3>
+                    <p class="text-sm text-gray-600 flex-grow line-clamp-2">View comprehensive model diagnostics</p>
+                </div>
+            </div> {% endcomment %}
+
+            <!-- Reports -->
+            <div class="group cursor-pointer" onclick="activateSidebarSection('reports')">
+                <div
+                    class="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-primary/30 transition-all duration-200 h-full flex flex-col">
+                    <div class="flex-shrink-0 mb-4">
+                        <i class="fas fa-chart-line text-2xl text-primary"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800 mb-2 truncate">Reports</h3>
+                    <p class="text-sm text-gray-600 flex-grow line-clamp-2">Generate analysis reports and gain insights
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actual Dashboard Content (initially hidden) -->
+<div id="dashboard-content" class="hidden">
+    <!-- Dynamic content area -->
+    <div id="content-area">
+        <!-- Content will be injected here based on selection -->
+    </div>
+</div>
+
+<!-- Parameters Modal -->
+<div id="parameters-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900" id="modal-title">Parameter Set Details</h3>
+                <button onclick="closeParametersModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 class="font-medium text-gray-800 mb-2 flex items-center">
+                        <i class="fas fa-cog mr-2 text-gray-600"></i>
+                        Parameters
+                    </h4>
+                    <div class="bg-white rounded border p-4 max-h-96 overflow-y-auto">
+                        <pre id="modal-parameters" class="text-sm text-gray-700 whitespace-pre-wrap font-mono"></pre>
+                    </div>
+                </div>
+
+                <!-- Job Group Statistics -->
+                <div id="modal-statistics" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Statistics will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end pt-4 border-t border-gray-200 space-x-3">
+                <button onclick="closeParametersModal()"
+                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Modal -->
+<div id="job-details-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div
+        class="relative mx-auto p-5 border w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 2xl:w-2/3 shadow-lg rounded-md bg-white h-[90vh] my-[5vh]">
+        <div class="h-full flex flex-col min-h-0">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-200 flex-shrink-0">
+                <h3 class="text-lg font-medium text-gray-900" id="job-modal-title">Job Details</h3>
+
+                <div class="flex items-center space-x-3">
+
+                    <!-- Export Results Button with Dropdown -->
+                    <div class="relative inline-block mr-3">
+                        <div class="flex">
+                            <button id="export-results-btn" onclick="exportResults('json')"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-l-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <i class="fas fa-download mr-2"></i>
+                                Export Results
+                            </button>
+                            <button id="export-results-options"
+                                class="px-2 py-2 bg-primary text-white rounded-r-md hover:bg-primary/90 border-l border-primary/20"
+                                onclick="toggleExportDropdown(event)">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <div
+                            class="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10 hidden export-dropdown">
+                            <div class="py-1">
+                                <button
+                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                    onclick="exportResults('json')">
+                                    <i class="fas fa-file-code mr-3 text-blue-600 flex-shrink-0"></i>
+                                    <span>Export JSON</span>
+                                </button>
+                                <button
+                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                    onclick="exportResults('csv')">
+                                    <i class="fas fa-file-csv mr-3 text-green-600 flex-shrink-0"></i>
+                                    <span>Export CSV</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="closeJobDetailsModal()"
+                        class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="mt-4 flex-grow flex flex-col min-h-0">
+                <!-- Job Info Header -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-4 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <i id="job-modal-status-icon" class="fas fa-check-circle text-green-600"></i>
+                                <span id="job-modal-status" class="font-medium text-green-600">COMPLETED</span>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                <span id="job-modal-id">Job #1234</span> •
+                                <span id="job-modal-runtime">2m 30s</span> •
+                                <span id="job-modal-timestamp">2 hours ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="job-modal-status-message" class="text-sm text-gray-600 mt-2 hidden"></div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="border-b border-gray-200 mb-4 flex-shrink-0">
+                    <nav class="flex space-x-8">
+                        <button
+                            class="job-detail-tab-btn active border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium"
+                            data-tab="inference">
+                            <i class="fas fa-brain mr-2"></i>Inference
+                        </button>
+                        <button
+                            class="job-detail-tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                            data-tab="analysis">
+                            <i class="fas fa-chart-line mr-2"></i>Analysis
+                        </button>
+                        <button
+                            class="job-detail-tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                            data-tab="diagnosis">
+                            <i class="fas fa-chart-line mr-2"></i>Diagnostics
+                        </button>
+                        <button
+                            class="job-detail-tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                            data-tab="tags">
+                            <i class="fas fa-tags mr-2"></i>Tags
+                        </button>
+                        <button
+                            class="job-detail-tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                            data-tab="logs">
+                            <i class="fas fa-file-alt mr-2"></i>Logs
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content Container -->
+                <div class="flex-grow overflow-y-auto min-h-0">
+
+                    <!-- Inference Tab -->
+                    <div class="job-detail-tab-content" id="inference-tab">
+                        <div class="p-4 space-y-4">
+                            <!-- Input Section (always at top) -->
+                            <div class="bg-white shadow rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 flex items-center mb-3">
+                                    <i class="fas fa-arrow-right mr-2 text-blue-500"></i>Input
+                                </h4>
+                                <div class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
+                                    <div id="job-input-content">Loading...</div>
+                                    <button id="input-toggle-btn"
+                                        class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium hidden"
+                                        onclick="toggleInputExpansion()">
+                                        Show more
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Documents and Results Section -->
+                            <div id="inference-results-container" class="space-y-4">
+                                <!-- For text-retrieval: Documents table -->
+                                <div id="documents-table-container" class="hidden bg-white shadow rounded-lg">
+                                    <div class="p-4 border-b">
+                                        <h4 class="font-medium text-gray-800 flex items-center">
+                                            <i class="fas fa-file-text mr-2 text-green-500"></i>Retrieved Documents &
+                                            Results
+                                        </h4>
+                                    </div>
+                                    <table class="w-full">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">#</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document Text</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">BM25</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Rerank</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Prediction</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Relevance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="documents-table-body" class="bg-white divide-y divide-gray-200">
+                                            <!-- Document rows will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- For non-retrieval tasks: Simple output/reference sections -->
+                                <div id="simple-results-container" class="hidden space-y-4">
+                                    <!-- Output Section -->
+                                    <div class="bg-white shadow rounded-lg p-4">
+                                        <h4 class="font-medium text-gray-800 flex items-center mb-3">
+                                            <i class="fas fa-arrow-left mr-2 text-green-500"></i>Generated Output
+                                        </h4>
+                                        <div class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
+                                            <div id="job-output-content">Loading...</div>
+                                            <button id="output-toggle-btn"
+                                                class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium hidden"
+                                                onclick="toggleOutputExpansion()">
+                                                Show more
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Reference Section -->
+                                    <div class="bg-white shadow rounded-lg p-4">
+                                        <h4 class="font-medium text-gray-800 flex items-center mb-3">
+                                            <i class="fas fa-star mr-2 text-yellow-500"></i>Reference
+                                        </h4>
+                                        <div class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
+                                            <div id="job-reference-content">Loading...</div>
+                                            <button id="reference-toggle-btn"
+                                                class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium hidden"
+                                                onclick="toggleReferenceExpansion()">
+                                                Show more
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- No Results Message -->
+                            <div id="no-inference-results" class="text-center py-8 hidden">
+                                <i class="fas fa-exclamation-triangle text-4xl text-gray-300 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-600 mb-2">No Inference Results Available</h3>
+                                <p class="text-gray-500" id="no-results-message">The selected job doesn't have any
+                                    inference results to display.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Tab -->
+                    <div class="job-detail-tab-content hidden" id="analysis-tab">
+                        <div class="space-y-6 p-4">
+                            <!-- Metrics Grid -->
+                            <div id="job-metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Metrics will be populated dynamically -->
+                            </div>
+
+                            <!-- Detailed Results -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 flex items-center cursor-pointer hover:text-purple-600 transition-colors"
+                                    onclick="toggleDetailedResults()">
+                                    <i id="detailed-results-chevron"
+                                        class="fas fa-chevron-right mr-2 text-purple-500 transition-transform"></i>
+                                    <i class="fas fa-table mr-2 text-purple-500"></i>Detailed Results
+                                </h4>
+                                <div id="detailed-results-content"
+                                    class="bg-white rounded border mt-3 p-2 min-h-[300px] hidden">
+                                    <pre id="job-detailed-results"
+                                        class="text-sm text-gray-700 whitespace-pre-wrap font-mono">Loading...</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diagnosis Tab -->
+                    <div class="job-detail-tab-content hidden" id="diagnosis-tab">
+                        <div class="space-y-6 p-4">
+                            <div id="diagnosis-content">
+                                <!-- Diagnostic reports will be populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags Tab -->
+                    <div class="job-detail-tab-content hidden" id="tags-tab">
+                        <div class="space-y-6 p-4">
+                            <!-- Add New Tag Section -->
+                            <div class="bg-white shadow rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 flex items-center mb-4">
+                                    <i class="fas fa-plus mr-2 text-green-500"></i>Add New Tag
+                                </h4>
+                                <div class="space-y-4">
+                                    <div class="flex space-x-3">
+                                        <select id="available-tags-select"
+                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <option value="">Select a tag...</option>
+                                        </select>
+                                        <button id="add-tag-btn" onclick="addTagToJob()"
+                                            class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled>
+                                            <i class="fas fa-plus mr-2"></i>Add Tag
+                                        </button>
+                                    </div>
+                                    <div id="tag-preview"
+                                        class="hidden bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                        <!-- Tag preview content will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Current Tags Section -->
+                            <div class="bg-white shadow rounded-lg">
+                                <div class="p-4 border-b">
+                                    <h4 class="font-medium text-gray-800 flex items-center">
+                                        <i class="fas fa-tags mr-2 text-blue-500"></i>Current Tags
+                                        <span id="tags-count"
+                                            class="ml-2 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">0</span>
+                                    </h4>
+                                </div>
+                                <div id="current-tags-container" class="p-4">
+                                    <div id="no-tags-message" class="text-center py-8 text-gray-500">
+                                        <i class="fas fa-tag text-4xl text-gray-300 mb-4"></i>
+                                        <p>No tags have been added to this job yet.</p>
+                                        <p class="text-sm mt-2">Use the section above to add your first tag.</p>
+                                    </div>
+                                    <div id="tags-list" class="space-y-4 hidden">
+                                        <!-- Current tags will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Tab -->
+                    <div class="job-detail-tab-content hidden h-full flex flex-col" id="logs-tab">
+                        <div class="p-4 flex flex-col h-full min-h-0">
+                            <!-- Job Logs -->
+                            <div class="flex flex-col h-full min-h-0">
+                                <h4 class="font-medium text-gray-800 flex items-center mb-3 flex-shrink-0">
+                                    <i class="fas fa-file-alt mr-2 text-gray-500"></i>Job Logs
+                                </h4>
+                                <div
+                                    class="bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-y-auto flex-grow min-h-0">
+                                    <pre id="job-logs"
+                                        class="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">Loading...</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center pt-4 border-t border-gray-200 space-x-3 flex-shrink-0 mt-4">
+                <!-- Sample Navigation (only visible in inference tab) -->
+                <div id="sample-navigation" class="flex items-center space-x-3 hidden">
+                    <div class="flex items-center space-x-3">
+                        <h4 class="font-medium text-gray-800">Sample Navigation</h4>
+                        <span id="sample-counter" class="text-sm text-gray-600">1 of 1</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prev-sample-btn" onclick="contentManager.navigateSample('prev')"
+                            class="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            disabled>
+                            <i class="fas fa-chevron-left mr-1"></i>Previous
+                        </button>
+                        <button id="next-sample-btn" onclick="contentManager.navigateSample('next')"
+                            class="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            disabled>
+                            Next<i class="fas fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Spacer to push close button to the right -->
+                <div class="flex-grow"></div>
+
+                <!-- Diagnostic Button with Dropdown -->
+                <div class="relative inline-block" id="diagnostic-buttons-container" style="display: none;">
+                    <div class="flex">
+                        <button id="run-diagnostic-btn" onclick="toggleDiagnosticDropdown(event)"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-l-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-microscope mr-2"></i>
+                            <span>Run Diagnostic</span>
+                        </button>
+                        <button id="run-diagnostic-options"
+                            class="px-2 py-2 bg-purple-600 text-white rounded-r-md hover:bg-purple-700 border-l border-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            onclick="toggleDiagnosticDropdown(event)">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+                    <div
+                        class="absolute left-0 bottom-full mb-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10 hidden diagnostic-dropdown">
+                        <div class="py-1">
+                            <button
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onclick="runDiagnostic('lxt', 'full')">
+                                <i class="fas fa-search mr-3 text-purple-600 flex-shrink-0"></i>
+                                <span>LXT (Full Job)</span>
+                            </button>
+                            <button
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onclick="runDiagnostic('lxt', 'sample')" id="diagnostic-lxt-sample-option">
+                                <i class="fas fa-microscope mr-3 text-purple-600 flex-shrink-0"></i>
+                                <span>LXT (Sample)</span>
+                            </button>
+                            <button
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onclick="runDiagnostic('shap', 'full')">
+                                <i class="fas fa-chart-bar mr-3 text-purple-600 flex-shrink-0"></i>
+                                <span>SHAP (Full Job)</span>
+                            </button>
+                            <button
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onclick="runDiagnostic('shap', 'sample')" id="diagnostic-shap-sample-option">
+                                <i class="fas fa-chart-line mr-3 text-purple-600 flex-shrink-0"></i>
+                                <span>SHAP (Sample)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Close Button -->
+                <button onclick="closeJobDetailsModal()"
+                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Details Modal -->
+<div id="activity-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900" id="activity-modal-title">Activity Details</h3>
+                <button onclick="closeActivityModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <!-- Activity Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div id="activity-modal-icon-container"
+                            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+                            <!-- Icon will be populated by JavaScript -->
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-800" id="activity-modal-type">Activity Type</h4>
+                            <p class="text-sm text-gray-500" id="activity-modal-timestamp">Timestamp</p>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-700" id="activity-modal-summary">Summary</p>
+                </div>
+
+                <!-- Changes Details -->
+                <div id="activity-modal-changes" class="space-y-4">
+                    <!-- Changes will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end pt-4 border-t border-gray-200 space-x-3">
+                <button onclick="closeActivityModal()"
+                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Selection Modal for Analysis -->
+<div id="job-selection-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div
+        class="relative top-20 mx-auto border w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 shadow-lg rounded-md bg-white px-5 pb-5">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Select Job for Analysis</h3>
+                    <p class="text-sm text-gray-500 mt-1">Choose a completed job to run analysis on</p>
+                </div>
+                <button onclick="closeJobSelectionModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <div id="job-selection-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Job list will be populated by JavaScript -->
+                </div>
+
+                <div id="no-jobs-message" class="text-center py-8 hidden">
+                    <i class="fas fa-exclamation-triangle text-4xl text-gray-300 mb-4"></i>
+                    <h4 class="text-lg font-medium text-gray-600 mb-2">No Finished Jobs Found</h4>
+                    <p class="text-gray-500">There are no completed or failed jobs available for analysis. Please run
+                        some jobs first.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-4 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Completed and failed jobs are available for analysis
+                    </div>
+                    <div class="flex space-x-3 flex-shrink-0">
+                        <button onclick="closeJobSelectionModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                        <button id="run-analysis-btn" onclick="runSelectedAnalysis()"
+                            class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            disabled>
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Run Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Modal for showing full document text -->
+<div id="documentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-4xl max-h-[80vh] m-4 flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg font-semibold">Document Text</h3>
+            <button onclick="closeDocumentModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto flex-1">
+            <div class="mb-2 text-sm text-gray-600">
+                Document #<span id="modalDocId"></span>
+            </div>
+            <div id="modalDocText" class="text-sm leading-relaxed whitespace-pre-wrap"></div>
+        </div>
+        <div class="p-4 border-t bg-gray-50 rounded-b-lg">
+            <button onclick="closeDocumentModal()"
+                class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const testsData = {{ search_data| safe }};
+    const projectId = '{{ project.id }}';
+    const baseUrlGenerateReport = `/projects/{{ project.id }}`
+    const createJobsApi = `{% url "api_create_jobs" %}`;
+    const duplicateJobsApi = `{% url "api_duplicate_jobs" %}`;
+    const createJobDiagnosticApi = `{% url "create_job_diagnostic" %}`;
+
+    // Processing service API URLs (assuming processing service is running on port 8001)
+    const processingApiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:8001'
+        : `${window.location.protocol}//${window.location.hostname}:8001`;
+    const tagsApiBase = `${processingApiBase}/tags`;
+
+    // Make tagsApiBase globally available
+    window.tagsApiBase = tagsApiBase;
+
+    // Auto-activate section based on URL parameter
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if active_section %}
+        activateSidebarSection('{{ active_section }}');
+
+        // If we have specific test or method IDs, show that content
+        {% if active_test_id %}
+        setTimeout(function () {
+            showDashboardContent('Test', 'test', '{{ active_test_id }}');
+        }, 100);
+        {% elif active_method_id %}
+        // Find the test ID for this method
+        const testsData = {{ search_data| safe }};
+    
+        let testId = null;
+    for (const test of testsData) {
+        for (const method of test.methods || []) {
+            if (method.id === '{{ active_method_id }}') {
+                testId = test.id;
+                break;
+            }
+        }
+        if (testId) break;
+    }
+    if (testId) {
+        setTimeout(function () {
+            showDashboardContent('Method', 'method', '{{ active_method_id }}', testId);
+        }, 100);
+    }
+    {% endif %}
+    {% else %}
+    activateSidebarSection('project');
+    {% endif %}
+    });
+</script>
+
+<script type="text/template" id="test-overview-template">
+    <div class="test-overview">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex-1 min-w-0 pr-6">
+                <h2 class="text-2xl font-bold text-gray-800">{testName}</h2>
+                <p class="text-gray-500 truncate">{testDescription}</p>
+            </div>
+            <div class="flex-shrink-0 flex space-x-3">
+                <button class="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50" onclick="editTest('{projectId}', '{testId}')">
+                    <i class="fas fa-cog"></i>
+                    <span>Configure</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Test Summary -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
+            <h3 class="font-medium text-gray-800 mb-4">Test Overview</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">{methodsCount}</div>
+                    <div class="text-sm text-gray-500">Total Methods</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">{successfulRuns}</div>
+                    <div class="text-sm text-gray-500">Successful</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600">{failedRuns}</div>
+                    <div class="text-sm text-gray-500">Failed</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-600">{uniqueDatasets}</div>
+                    <div class="text-sm text-gray-500">Datasets</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Methods Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+            {#methods}
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md cursor-pointer transition-shadow" onclick="showDashboardContent('{name}', 'method', '{id}', '{testId}')">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-medium text-gray-800 truncate pr-2">{name}</h3>
+                    <i class="fas fa-code text-green-500 flex-shrink-0"></i>
+                </div>
+                <p class="text-sm text-gray-600 mb-3 line-clamp-2">{description}</p>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 flex-shrink-0">Dataset:</span>
+                        <span class="text-gray-700 truncate ml-2">{dataset}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 flex-shrink-0">Metrics:</span>
+                        <span class="text-gray-700 truncate ml-2">{metrics}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 flex-shrink-0">Jobs:</span>
+                        <span class="text-gray-700">{jobsCount}</span>
+                    </div>
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-gray-500 flex-shrink-0">Most Recent:</span>
+                        <span class="{statusClass} flex items-center">
+                            <i class="fas {statusIcon} mr-1"></i>
+                            {statusText}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {/methods}
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="method-detail-template">
+    <div class="method-detail">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex-1 min-w-0 pr-6">
+                <nav class="text-sm text-gray-500 mb-2">
+                    <a href="#" onclick="showDashboardContent('{testName}', 'test', '{testId}')" class="hover:text-primary">{testName}</a>
+                    <span class="mx-2">></span>
+                    <span class="text-gray-800">{methodName}</span>
+                </nav>
+                <h2 class="text-2xl font-bold text-gray-800">{methodName}</h2>
+                <p class="text-gray-500 truncate">{methodDescription}</p>
+            </div>
+            <div class="flex-shrink-0 flex space-x-3">
+                <div class="relative inline-block">
+                    <div class="flex">
+                        <button id="run-button" class="px-4 py-2 bg-primary text-white rounded-l-md hover:bg-primary/90" onclick='runJob(`{methodIds}`, "{jobType}")'>
+                            <i class="fas fa-play"></i>
+                            <span>Run</span>
+                        </button>
+                        <button id="run-button-options" class="px-2 py-2 bg-primary text-white rounded-r-md hover:bg-primary/90 border-l border-primary/20" onclick="toggleRunDropdown(event)">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="absolute right-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10 hidden run-dropdown">
+                        <div class="py-1">
+                            <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center" onclick='runJob(`{methodIds}`, "{jobType}")'>
+                                <i class="fas fa-play mr-3 text-green-600 flex-shrink-0"></i>
+                                <span>{jobButtonText}</span>
+                            </button>
+                            <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center" onclick='selectRunOption(`{methodIds}`, event, "ANALYSIS")'>
+                                <i class="fas fa-chart-line mr-3 text-purple-600 flex-shrink-0"></i>
+                                <span>Run Analysis Only</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button class="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50" onclick="editMethod('{projectId}', '{methodId}')">
+                    <i class="fas fa-cog"></i>
+                    <span>Configure</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Method Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {#cards}
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-gray-500 font-medium text-sm">{name}</h3>
+                    <i class="fas {icon} {color} flex-shrink-0"></i>
+                </div>
+                <p class="text-lg font-bold mt-2 {color} truncate">{value}</p>
+            </div>
+            {/cards}
+        </div>
+
+        <!-- Multi-Tab Card -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-6">
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200">
+                <div class="flex items-center justify-between px-6">
+                    <nav class="flex space-x-8">
+                        <button class="method-tab-btn py-4 px-1 border-b-2 font-medium text-sm active" data-tab="jobs">
+                            <i class="fas fa-tasks mr-2"></i>
+                            Jobs
+                        </button>
+                        <button class="method-tab-btn py-4 px-1 border-b-2 font-medium text-sm" data-tab="activity">
+                            <i class="fas fa-history mr-2"></i>
+                            Activity
+                        </button>
+                    </nav>
+                    <button id="compare-jobs-btn" class="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-file-alt mr-1.5 text-xs"></i>
+                        View Report
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tab Content: Jobs -->
+            <div class="method-tab-content" id="jobs-tab"> 
+                <div class="p-6">
+                    <div id="job-groups-container">
+                        <!-- Job groups will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Activity -->
+            <div class="method-tab-content hidden" id="activity-tab">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                            <h4 class="font-medium text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-history mr-2 text-gray-600"></i>
+                                Activity History
+                            </h4>
+                            <div class="max-h-96 overflow-y-auto">
+                                <div class="space-y-3" id="activity-history-container">
+                                    <!-- Activities will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

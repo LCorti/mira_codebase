@@ -1,0 +1,40 @@
+<!-- Step 5: Parameters & Review -->
+<div id="step-5" class="wizard-step hidden mb-8">
+    <!-- Configuration Review & Details -->
+    <div class="bg-white rounded-lg shadow-xl border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-700">Configuration Review</h2>
+            <p class="text-sm text-gray-500 mt-1">Review your project configuration and view detailed parameters</p>
+        </div>
+        
+        <!-- Auto-run warning (hidden by default, populated by JavaScript) -->
+        <div id="auto-run-warning" class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg hidden">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center flex-1">
+                    <i class="fa-solid fa-info-circle text-purple-400 mr-3"></i>
+                    <p id="auto-run-warning-text" class="text-sm text-purple-700">
+                        <span class="font-medium">Auto-run selected:</span>
+                        <span id="auto-run-warning-detail">Project will run automatically after creation</span>
+                    </p>
+                </div>
+                <button type="button" 
+                        onclick="toggleAutoRun()" 
+                        class="ml-4 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md transition-colors duration-200 flex items-center gap-2">
+                    <i class="fa-solid fa-times text-xs"></i>
+                    <span>Disable Auto-run</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Review Items Container -->
+        <div id="review-items-container" class="divide-y divide-gray-200">
+            <!-- Review items will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <textarea 
+        id="parameters" 
+        name="parameters"
+        class="hidden"
+    ></textarea>
+</div>

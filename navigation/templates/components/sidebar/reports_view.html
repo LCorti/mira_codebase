@@ -1,0 +1,383 @@
+<!-- Reports View Template -->
+<template id="reports-view">
+    <div class="space-y-2">
+        <div class="space-y-1">
+            <span class="text-sm text-gray-500">Reports</span>
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-purple-600">{{ project.name }}</h2>
+                <div class="flex items-center space-x-1">
+                    <button class="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition-colors duration-200 refresh-reports-btn" 
+                            title="Refresh reports list">
+                        <i class="fas fa-sync text-sm"></i>
+                    </button>
+                    {% comment %} <button class="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition-colors duration-200" 
+                            title="Create new report" 
+                            onclick="openCreateReportModal()">
+                        <i class="fas fa-plus text-sm"></i>
+                    </button> {% endcomment %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Explorer -->
+        <div class="space-y-1">
+            {% if reports %}
+                {% for report in reports %}
+                    <div class="report-item group">
+                        <!-- Report Item -->
+                        <div class="flex items-center py-2 px-2 hover:bg-gray-50 cursor-pointer group transition-colors duration-200 rounded report-item-clickable" 
+                            data-report-id="{{ report.id }}" 
+                            data-report-name="{{ report.name }}" 
+                            data-report-file-type="{{ report.file_type }}" 
+                            id="report-item-{{ report.id }}">
+                            
+                            <!-- File Type Icon -->
+                            {% if report.file_type == '.html' %}
+                                <i class="fas fa-file-code mr-2 text-blue-500 cursor-pointer flex-shrink-0"></i>
+                            {% elif report.file_type == '.pdf' %}
+                                <i class="fas fa-file-pdf mr-2 text-red-500 cursor-pointer flex-shrink-0"></i>
+                            {% else %}
+                                <i class="fas fa-file mr-2 text-gray-500 cursor-pointer flex-shrink-0"></i>
+                            {% endif %}
+                            
+                            <!-- Report Info -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-700 group-hover:text-gray-900 truncate cursor-pointer hover:text-purple-600 font-medium" 
+                                        title="{{ report.display_name }}">
+                                        {{ report.display_name }}
+                                    </span>
+                                    
+                                    <!-- Actions Menu -->
+                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center space-x-1">
+                                        <button class="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 download-report-btn" 
+                                                title="Download report"
+                                                data-report-id="{{ report.id }}"
+                                                data-report-name="{{ report.name }}">
+                                            <i class="fas fa-download text-xs"></i>
+                                        </button>
+                                        <button class="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-red-600 delete-report-btn" 
+                                                title="Delete report"
+                                                data-report-id="{{ report.id }}"
+                                                data-report-name="{{ report.name }}">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Report Metadata -->
+                                <div class="text-xs text-gray-500 mt-1 space-y-0.5">
+                                    <div class="flex items-center justify-between">
+                                        <span>{{ report.last_edited }}</span>
+                                        <span>{{ report.file_size_human }}</span>
+                                    </div>
+                                    {% if report.method_name %}
+                                        <div class="text-purple-600 font-medium">
+                                            Method: {{ report.method_name }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-sm text-gray-500 italic py-4 text-center">
+                    <i class="fas fa-folder-open text-2xl text-gray-300 mb-2 block"></i>
+                    No reports available.
+                    <div class="text-xs mt-1">
+                        Generate reports from the comparison view to see them here.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Summary Info -->
+        {% if reports %}
+            <div class="mt-4 pt-2 border-t border-gray-200 text-xs text-gray-500">
+                <div class="flex items-center justify-between">
+                    <span>{{ report_stats.total }} report{{ report_stats.total|pluralize }}</span>
+                    <span>
+                        {% if report_stats.html_count > 0 %}{{ report_stats.html_count }} HTML{% endif %}{% if report_stats.html_count > 0 and report_stats.pdf_count > 0 %}, {% endif %}{% if report_stats.pdf_count > 0 %}{{ report_stats.pdf_count }} PDF{% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</template>
+
+<script>
+    function refreshReportsList() {
+        // Reload the current page to refresh the reports list
+        window.location.reload();
+    }
+
+    function showReportContent(reportId, reportName, fileType) {
+        // Clear any existing highlights
+        document.querySelectorAll('.report-item').forEach(item => {
+            item.classList.remove('bg-purple-50', 'border-purple-200');
+        });
+        
+        // Highlight selected report
+        const reportItem = document.getElementById(`report-item-${reportId}`);
+        if (reportItem) {
+            reportItem.closest('.report-item').classList.add('bg-purple-50', 'border-purple-200');
+        }
+        
+        // Load and display the report content
+        loadReportContent(reportId, reportName, fileType);
+    }
+
+    function loadReportContent(reportId, reportName, fileType) {
+        const contentArea = document.getElementById('content-area');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const dashboardContent = document.getElementById('dashboard-content');
+        
+        // Switch to dashboard content first
+        welcomeScreen.classList.add('hidden');
+        dashboardContent.classList.remove('hidden');
+        
+        // Calculate margin based on sidebar visibility
+        const detailedView = document.getElementById('detailed-view');
+        const marginLeft = detailedView && !detailedView.classList.contains('hidden') ? '320px' : '64px';
+        
+        // Show loading state in a full-screen overlay
+        contentArea.innerHTML = `
+            <div class="fixed inset-0 z-10 bg-white flex items-center justify-center" style="margin-left: ${marginLeft}; top: 60px;">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600">Loading report...</p>
+                </div>
+            </div>
+        `;
+        
+        // Fetch the report content
+        fetch(`/projects/${projectId}/reports/${reportId}/view/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(content => {
+                if (fileType === '.html') {
+                    // For HTML reports, display them in an iframe or directly embed
+                    contentArea.innerHTML = `
+                        <div class="report-viewer fixed inset-0 z-10 bg-white" style="margin-left: ${marginLeft}; top: 60px;">
+                            <div class="bg-white border-b border-gray-200 p-4 shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h2 class="text-lg font-semibold text-gray-800">${reportName}</h2>
+                                        <p class="text-sm text-gray-600">HTML Report</p>
+                                    </div>
+                                    <button onclick="closeReportViewer()" 
+                                            class="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                                            title="Close report">
+                                        <i class="fas fa-times text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="report-content w-full" style="height: calc(100vh - 160px); overflow-y: auto;">
+                                <iframe srcdoc="${content.replace(/"/g, '&quot;')}" 
+                                        style="width: 100%; height: 100%; border: none; display: block;">
+                                </iframe>
+                            </div>
+                        </div>
+                    `;
+                } else if (fileType === '.pdf') {
+                    // For PDF reports, show a PDF viewer
+                    contentArea.innerHTML = `
+                        <div class="report-viewer fixed inset-0 z-10 bg-white" style="margin-left: ${marginLeft}; top: 60px;">
+                            <div class="bg-white border-b border-gray-200 p-4 shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h2 class="text-lg font-semibold text-gray-800">${reportName}</h2>
+                                        <p class="text-sm text-gray-600">PDF Report</p>
+                                    </div>
+                                    <button onclick="closeReportViewer()" 
+                                            class="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                                            title="Close report">
+                                        <i class="fas fa-times text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="report-content bg-gray-100 flex items-center justify-center w-full" style="height: calc(100vh - 160px);">
+                                <div class="text-center">
+                                    <i class="fas fa-file-pdf text-6xl text-red-500 mb-4"></i>
+                                    <p class="text-gray-700 mb-4">PDF reports cannot be displayed inline.</p>
+                                    <p class="text-sm text-gray-500">Use the download button in the sidebar to view this PDF.</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading report:', error);
+                contentArea.innerHTML = `
+                    <div class="fixed inset-0 z-10 bg-white flex items-center justify-center" style="margin-left: ${marginLeft}; top: 60px;">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                            <p class="text-gray-700 mb-2">Error loading report</p>
+                            <p class="text-sm text-gray-500 mb-4">${error.message}</p>
+                            <button onclick="closeReportViewer()" 
+                                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+    }
+
+    function closeReportViewer() {
+        const contentArea = document.getElementById('content-area');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const dashboardContent = document.getElementById('dashboard-content');
+        
+        // Clear content and show welcome screen
+        contentArea.innerHTML = '';
+        dashboardContent.classList.add('hidden');
+        welcomeScreen.classList.remove('hidden');
+        
+        // Clear report highlights
+        document.querySelectorAll('.report-item').forEach(item => {
+            item.classList.remove('bg-purple-50', 'border-purple-200');
+        });
+    }
+
+    function downloadReportSidebar(reportId, reportName) {
+        const downloadUrl = `/projects/${projectId}/reports/${reportId}/download/`;
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = reportName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function confirmDeleteReport(reportId, reportName) {
+        if (confirm(`Are you sure you want to delete the report "${reportName}"? This action cannot be undone.`)) {
+            deleteReport(reportId);
+        }
+    }
+
+    function deleteReport(reportId) {
+        fetch(`/projects/${projectId}/reports/${reportId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                // Remove the report item from the UI
+                const reportItem = document.getElementById(`report-item-${reportId}`);
+                if (reportItem) {
+                    reportItem.closest('.report-item').remove();
+                }
+                
+                // Optionally refresh the reports list
+                setTimeout(() => {
+                    refreshReportsList();
+                }, 1000);
+            } else {
+                throw new Error('Failed to delete report');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting report:', error);
+            alert('Error deleting report. Please try again.');
+        });
+    }
+
+    // Helper function to get CSRF token (should already exist in your project)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Function to update report viewer positioning when sidebar visibility changes
+    function updateReportViewerPosition() {
+        const reportViewer = document.querySelector('.report-viewer');
+        if (reportViewer) {
+            const detailedView = document.getElementById('detailed-view');
+            const marginLeft = detailedView && !detailedView.classList.contains('hidden') ? '320px' : '64px';
+            reportViewer.style.marginLeft = marginLeft;
+        }
+    }
+
+    // Use event delegation for dynamically loaded report items
+    document.addEventListener('click', function(event) {        
+        const refreshBtn = event.target.closest('.refresh-reports-btn');
+        if (refreshBtn) {
+            event.stopPropagation();
+            refreshReportsList();
+            return;
+        }
+
+        // Handle download button clicks
+        const downloadBtn = event.target.closest('.download-report-btn');
+        if (downloadBtn) {
+            event.stopPropagation();
+            const reportId = downloadBtn.dataset.reportId;
+            const reportName = downloadBtn.dataset.reportName;
+            downloadReportSidebar(reportId, reportName);
+            return;
+        }
+
+        // Handle delete button clicks
+        const deleteBtn = event.target.closest('.delete-report-btn');
+        if (deleteBtn) {
+            event.stopPropagation();
+            const reportId = deleteBtn.dataset.reportId;
+            const reportName = deleteBtn.dataset.reportName;
+            confirmDeleteReport(reportId, reportName);
+            return;
+        }
+
+        // Handle report item clicks (check this AFTER buttons)
+        const reportItem = event.target.closest('.report-item-clickable');
+        if (reportItem) {
+            const reportId = reportItem.dataset.reportId;
+            const reportName = reportItem.dataset.reportName;
+            const fileType = reportItem.dataset.reportFileType;
+            showReportContent(reportId, reportName, fileType);
+            return;
+        }
+    });
+
+    // Listen for sidebar visibility changes
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create a MutationObserver to watch for changes to the detailed-view element
+        const detailedView = document.getElementById('detailed-view');
+        if (detailedView) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        updateReportViewerPosition();
+                    }
+                });
+            });
+
+            // Start observing
+            observer.observe(detailedView, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+    });
+</script>

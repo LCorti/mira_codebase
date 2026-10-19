@@ -1,0 +1,390 @@
+<!-- Search View Template -->
+<template id="search-view">
+    <div class="space-y-2">
+        <!-- Search Header -->
+        <div class="space-y-1">
+            <span class="text-sm text-gray-500">Search</span>
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input 
+                    type="text" 
+                    id="search-input"
+                    placeholder="Search"
+                    class="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    oninput="performSearch(this.value)"
+                >
+                <button 
+                    id="clear-search"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
+                    onclick="clearSearch()"
+                >
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search Results -->
+        <div id="search-results" class="hidden">
+            <div class="text-xs text-gray-500 mb-2" id="results-count"></div>
+            <div id="results-container"></div>
+        </div>
+        
+        <!-- No Results Message -->
+        <div id="no-results" class="hidden text-sm text-gray-500 text-center py-4">
+            <i class="fas fa-search text-gray-300 text-lg mb-2 block"></i>
+            No results found
+        </div>
+    </div>
+</template>
+
+<script>
+let searchData = [];
+let currentSearchTerm = '';
+let currentMatchingTags = []; // Store tags that matched the search
+
+// Initialize search data (this would be populated from your backend)
+function initializeSearch(projectData) {
+    searchData = [];
+    projectData.tests.forEach(test => {
+        // Add test to search data
+        searchData.push({
+            type: 'test',
+            id: test.id,
+            name: test.name,
+            searchText: test.name.toLowerCase()
+        });
+        
+        // Add methods to search data
+        test.methods.forEach(method => {
+            const tagNames = method.tag_names || [];
+            const tagSearchText = tagNames.join(' ').toLowerCase();
+            
+            searchData.push({
+                type: 'method',
+                id: method.id,
+                testId: test.id,
+                testName: test.name,
+                name: method.name,
+                description: method.description || '',
+                tagNames: tagNames,
+                searchText: `${test.name} ${method.name} ${method.description || ''}`.toLowerCase(),
+                tagSearchText: tagSearchText
+            });
+        });
+    });
+}
+
+function performSearch(searchTerm) {
+    currentSearchTerm = searchTerm.trim().toLowerCase();
+    const clearButton = document.getElementById('clear-search');
+    const resultsContainer = document.getElementById('search-results');
+    const noResultsContainer = document.getElementById('no-results');
+    const resultsCountElement = document.getElementById('results-count');
+    const resultsContentElement = document.getElementById('results-container');
+    
+    // Show/hide clear button
+    if (currentSearchTerm) {
+        clearButton.classList.remove('hidden');
+    } else {
+        clearButton.classList.add('hidden');
+    }
+    
+    // If no search term, hide results
+    if (!currentSearchTerm) {
+        resultsContainer.classList.add('hidden');
+        noResultsContainer.classList.add('hidden');
+        return;
+    }
+    
+    // Filter results and track match type
+    const filteredResults = searchData.filter(item => {
+        if (item.type === 'test') {
+            return item.searchText.includes(currentSearchTerm);
+        } else if (item.type === 'method') {
+            const nameMatch = item.searchText.includes(currentSearchTerm);
+            const tagMatch = item.tagSearchText && item.tagSearchText.includes(currentSearchTerm);
+            
+            if (nameMatch || tagMatch) {
+                // Mark if this was matched via tags (show icon if any tag matches)
+                item.matchedViaTag = tagMatch;
+                
+                // Count how many tags matched
+                if (tagMatch) {
+                    item.tagMatchCount = item.tagNames.filter(tag => 
+                        tag.toLowerCase().includes(currentSearchTerm)
+                    ).length;
+                }
+                return true;
+            }
+            return false;
+        }
+        return false;
+    });
+    
+    // Group results by test
+    const groupedResults = {};
+    filteredResults.forEach(item => {
+        if (item.type === 'test') {
+            if (!groupedResults[item.id]) {
+                groupedResults[item.id] = { test: item, methods: [] };
+            }
+            groupedResults[item.id].test = item;
+        } else if (item.type === 'method') {
+            if (!groupedResults[item.testId]) {
+                groupedResults[item.testId] = { test: null, methods: [] };
+            }
+            groupedResults[item.testId].methods.push(item);
+        }
+    });
+    
+    // Show results or no results message
+    if (filteredResults.length === 0) {
+        resultsContainer.classList.add('hidden');
+        noResultsContainer.classList.remove('hidden');
+        return;
+    }
+    
+    noResultsContainer.classList.add('hidden');
+    resultsContainer.classList.remove('hidden');
+    
+    // Update results count
+    const testCount = Object.keys(groupedResults).length;
+    const methodCount = filteredResults.filter(item => item.type === 'method').length;
+    resultsCountElement.textContent = `${testCount} test${testCount !== 1 ? 's' : ''}, ${methodCount} method${methodCount !== 1 ? 's' : ''}`;
+    
+    // Render results
+    renderSearchResults(groupedResults);
+}
+
+function renderSearchResults(groupedResults) {
+    const container = document.getElementById('results-container');
+    let html = '';
+    
+    // Color palette for test icons (cycling through colors)
+    const iconColors = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-orange-500'];
+    let colorIndex = 0;
+    
+    // Reapply highlighting after rendering
+    setTimeout(() => {
+        if (window.contentManager) {
+            window.contentManager.reapplyHighlight();
+        }
+    }, 0);
+    
+    Object.values(groupedResults).forEach(group => {
+        const hasTestMatch = group.test !== null;
+        const hasMethods = group.methods.length > 0;
+        
+        if (hasTestMatch || hasMethods) {
+            // Determine test info
+            const testInfo = group.test || (hasMethods ? {
+                id: group.methods[0].testId,
+                name: group.methods[0].testName
+            } : null);
+            
+            if (!testInfo) return;
+            
+            const testId = `search-test-${testInfo.id}`;
+            const isExpanded = hasMethods;
+            const iconColor = iconColors[colorIndex % iconColors.length];
+            colorIndex++;
+            
+            html += `
+                <div>
+                    <!-- Test Item -->
+                    <div class="flex items-center py-1 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" id="test-item-${testInfo.id}" onclick="toggleSearchTest('${testId}')">
+                        <i class="fas fa-chevron-right w-4 h-4 mr-2 text-gray-400 transition-transform duration-200 test-chevron ${isExpanded ? 'rotate-90' : ''}" id="chevron-${testInfo.id}"></i>
+                        <i class="fa-solid fa-flask-vial mr-2 ${iconColor} cursor-pointer flex-shrink-0 group-hover:opacity-80 transition-opacity duration-200"></i>
+                        <span class="text-sm text-gray-700 group-hover:text-gray-900 truncate cursor-pointer hover:text-purple-600" onclick="event.stopPropagation(); showDashboardContent('${testInfo.name}', 'test', '${testInfo.id}')">${highlightMatch(testInfo.name, currentSearchTerm)}</span>
+                    </div>
+                    
+                    <!-- Methods (collapsible) -->
+                    <div class="${isExpanded ? '' : 'hidden'} ml-2 space-y-1 border-l-2 border-gray-400" id="${testId}">
+            `;
+            
+            group.methods.forEach(method => {
+                let tagIndicator = '';
+                let matchingTagsJson = '[]';
+                
+                if (method.matchedViaTag && method.tagMatchCount > 0) {
+                    // Get matching tag names
+                    const matchingTags = method.tagNames.filter(tag => 
+                        tag.toLowerCase().includes(currentSearchTerm)
+                    );
+                    const tagsList = matchingTags.join(', ');
+                    matchingTagsJson = JSON.stringify(matchingTags).replace(/"/g, '&quot;');
+                    
+                    // Show only first tag and count if there are more
+                    let displayText = matchingTags[0];
+                    if (matchingTags.length > 1) {
+                        displayText += `, ... (${matchingTags.length - 1} more)`;
+                    }
+                    
+                    tagIndicator = `<span class="flex items-center ml-1 flex-shrink-0 text-xs text-blue-500" title="${tagsList}">
+                        <i class="fas fa-tag mr-1"></i>
+                        <span class="truncate">${displayText}</span>
+                    </span>`;
+                }
+                
+                html += `
+                        <div class="flex items-center py-1 pl-6 hover:bg-gray-50 cursor-pointer group transition-colors duration-200" id="method-item-${method.id}" onclick="showDashboardContentWithTags('${method.name}', 'method', '${method.id}', '${method.testId}', '${matchingTagsJson}')">
+                            <i class="fas fa-code text-xs mr-2 text-green-500 flex-shrink-0"></i>
+                            <span class="text-xs text-gray-600 group-hover:text-gray-800 truncate min-w-0" title="${method.description}">${highlightMatch(method.name, currentSearchTerm)}</span>
+                            ${tagIndicator}
+                        </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    container.innerHTML = html;
+}
+
+function highlightMatch(text, searchTerm) {
+    if (!searchTerm) return text;
+    
+    const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-200 px-1 rounded">$1</mark>');
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function toggleSearchTest(testId) {
+    const testElement = document.getElementById(testId);
+    const chevron = document.getElementById('chevron-' + testId.replace('search-test-', ''));
+    
+    if (testElement.classList.contains('hidden')) {
+        testElement.classList.remove('hidden');
+        chevron.classList.add('rotate-90');
+    } else {
+        testElement.classList.add('hidden');
+        chevron.classList.remove('rotate-90');
+    }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('search-input');
+    searchInput.value = '';
+    currentMatchingTags = []; // Clear matching tags
+    window.preservedSearchValue = ''; // Clear preserved search value
+    
+    // Clear any job highlights if on method view
+    if (window.contentManager) {
+        window.contentManager.clearJobTagHighlights();
+    }
+    
+    performSearch('');
+    searchInput.focus();
+}
+
+// Update search data for a specific method when tags change
+function updateSearchDataForMethod(methodId) {
+    if (!window.contentManager || !window.contentManager.testsData) {
+        console.warn('updateSearchDataForMethod: contentManager or testsData not available');
+        return;
+    }
+    
+    // Convert methodId to string for consistent comparison
+    const methodIdStr = String(methodId);
+    
+    // Find the method in testsData to get updated tag information
+    let methodData = null;
+    let testId = null;
+    
+    for (const test of window.contentManager.testsData) {
+        const method = test.methods.find(m => String(m.id) === methodIdStr);
+        if (method) {
+            methodData = method;
+            testId = test.id;
+            break;
+        }
+    }
+    
+    if (!methodData) {
+        console.warn('updateSearchDataForMethod: Method not found for ID:', methodId);
+        return;
+    }
+    
+    // Collect all unique tags from all jobs in this method
+    const allTags = new Set();
+    if (methodData.jobs && Array.isArray(methodData.jobs)) {
+        methodData.jobs.forEach(job => {
+            if (job.tags && Array.isArray(job.tags)) {
+                job.tags.forEach(tag => {
+                    if (tag.name) {
+                        allTags.add(tag.name);
+                    }
+                });
+            }
+        });
+    }
+    
+    const tagNames = Array.from(allTags);
+    const tagSearchText = tagNames.join(' ').toLowerCase();
+    
+    // Update the searchData entry for this method
+    const searchDataIndex = searchData.findIndex(item => 
+        item.type === 'method' && String(item.id) === methodIdStr
+    );
+    
+    if (searchDataIndex !== -1) {
+        searchData[searchDataIndex].tagNames = tagNames;
+        searchData[searchDataIndex].tagSearchText = tagSearchText;
+        
+        // If there's an active search, refresh the results
+        if (currentSearchTerm) {
+            performSearch(currentSearchTerm);
+        }
+    } else {
+        console.warn('updateSearchDataForMethod: Search data entry not found for method ID:', methodId);
+    }
+}
+
+// Make the function globally available for dashboard.js to call
+window.updateSearchDataForMethod = updateSearchDataForMethod;
+
+// Function to handle navigation from search with tag matching
+function showDashboardContentWithTags(itemName, type, itemId, testId, matchingTagsJson) {
+    try {
+        currentMatchingTags = JSON.parse(matchingTagsJson.replace(/&quot;/g, '"'));
+    } catch (e) {
+        currentMatchingTags = [];
+    }
+    
+    // Store globally for content manager to access
+    window.currentMatchingTags = currentMatchingTags;
+    
+    // Call regular navigation function
+    showDashboardContent(itemName, type, itemId, testId);
+}
+
+// Initialize search data when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Transform the Django context data to the expected format
+    const data = {{ search_data|safe }};
+    const projectData = {
+        tests: data.map(test => ({
+            id: test.id,
+            name: test.name,
+            description: test.description,
+            methods: test.methods.map(method => ({
+                id: method.id,
+                name: method.name,
+                description: method.description,
+                dataset_name: method.dataset_name,
+                tag_names: method.tag_names || []
+            }))
+        }))
+    };
+    
+    // Initialize the search functionality
+    initializeSearch(projectData);
+});
+</script>

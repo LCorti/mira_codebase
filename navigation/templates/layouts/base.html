@@ -1,0 +1,31 @@
+{% extends "head.html" %}
+
+{% load static %}
+
+{% block body %}
+<div class="flex flex-col h-screen">
+    <!-- Top Navigation - Full Width -->
+    {% include "components/topbar.html" %}
+    
+    <!-- Main Layout - Sidebar and Content -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar and Detailed View -->
+        <div class="flex">
+            {% include "components/sidebar.html" %}
+            {% include "components/sidebar_detailed.html" %}
+        </div>
+        
+        <!-- Content Area -->
+        <div class="flex-1 overflow-auto p-6 flex flex-col">
+            <div class="min-w-sm flex-1 flex flex-col">
+                {% block content %}
+                <!-- Page content goes here -->
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    {% include "components/settings.html" %}
+</div>
+{% endblock %}

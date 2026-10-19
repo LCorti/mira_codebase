@@ -1,0 +1,120 @@
+<!-- Job Details Modal -->
+<div id="job-details-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto p-5 border w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 2xl:w-2/3 shadow-lg rounded-md bg-white h-[90vh] my-[5vh]">
+        <div class="h-full flex flex-col min-h-0">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-200 flex-shrink-0">
+                <h3 class="text-lg font-medium text-gray-900" id="job-modal-title">Job Details</h3>
+                <button onclick="closeJobDetailsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="mt-4 flex-grow flex flex-col min-h-0">
+                <!-- Job Info Header -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-4 flex-shrink-0">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-500">Job ID:</span>
+                            <span id="job-modal-id" class="font-medium ml-1"></span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Status:</span>
+                            <span id="job-modal-status" class="font-medium ml-1"></span>
+                            <i id="job-modal-status-icon" class="ml-1"></i>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Runtime:</span>
+                            <span id="job-modal-runtime" class="font-medium ml-1"></span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Started:</span>
+                            <span id="job-modal-timestamp" class="font-medium ml-1"></span>
+                        </div>
+                    </div>
+                    <div id="job-modal-status-message" class="mt-2 text-sm text-gray-600"></div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="border-b border-gray-200 mb-4 flex-shrink-0">
+                    <nav class="-mb-px flex space-x-8">
+                        <button class="job-detail-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm" data-tab="inference">
+                            Inference Results
+                        </button>
+                        <button class="job-detail-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm" data-tab="analysis">
+                            Analysis
+                        </button>
+                        <button class="job-detail-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm" data-tab="logs">
+                            Logs
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content Container -->
+                <div class="flex-grow overflow-y-auto min-h-0">
+                    <!-- Inference Tab -->
+                    <div class="job-detail-tab-content" id="inference-tab">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-3">Input</h4>
+                                <div id="job-input-content" class="text-sm text-gray-600 whitespace-pre-wrap max-h-60 overflow-y-auto"></div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-3">Output</h4>
+                                <div id="job-output-content" class="text-sm text-gray-600 whitespace-pre-wrap max-h-60 overflow-y-auto"></div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-3">Reference</h4>
+                                <div id="job-reference-content" class="text-sm text-gray-600 whitespace-pre-wrap max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Tab -->
+                    <div class="job-detail-tab-content hidden" id="analysis-tab">
+                        <div class="space-y-6">
+                            <div id="job-metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Metrics will be populated by JavaScript -->
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-3">Detailed Results</h4>
+                                <pre id="job-detailed-results" class="text-sm text-gray-600 whitespace-pre-wrap max-h-96 overflow-y-auto"></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Tab -->
+                    <div class="job-detail-tab-content hidden" id="logs-tab">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-800 mb-3">Execution Logs</h4>
+                            <pre id="job-logs" class="text-sm text-gray-600 whitespace-pre-wrap max-h-96 overflow-y-auto font-mono"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex items-center pt-4 border-t border-gray-200 space-x-3 flex-shrink-0 mt-4">
+                <!-- Sample Navigation (only visible in inference tab) -->
+                <div id="sample-navigation" class="flex items-center space-x-3 hidden">
+                    <button id="prev-sample-btn" onclick="contentManager.navigateSample('prev')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span id="sample-counter" class="text-sm text-gray-600"></span>
+                    <button id="next-sample-btn" onclick="contentManager.navigateSample('next')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <!-- Spacer to push close button to the right -->
+                <div class="flex-grow"></div>
+                
+                <!-- Close Button -->
+                <button onclick="closeJobDetailsModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

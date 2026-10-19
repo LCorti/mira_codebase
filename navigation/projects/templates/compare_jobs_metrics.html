@@ -1,0 +1,189 @@
+{% load comparison_tags %}
+
+<!-- Metrics Comparison View -->
+<table class="comparison-table w-full">
+    <thead>
+        <tr>
+            <th class="w-16">Sample #</th>
+            <th class="w-80">Input</th>
+            {% for job in jobs %}
+                <th class="w-80">
+                    Job #{{ job.id|short_id }} Metrics
+                    <div class="text-xs font-normal text-gray-500 mt-1">
+                        {{ job.created_at|date:"M d, H:i" }}
+                    </div>
+                </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for sample_idx in samples_range %}
+            <tr class="sample-row">
+                <!-- Sample Number -->
+                <td class="text-center font-medium text-gray-600">
+                    {{ sample_idx|add:1 }}
+                </td>
+                
+                <!-- Input -->
+                <td class="job-output">
+                    {% with input_text=jobs|get_sample_input:sample_idx %}
+                        {% if input_text %}
+                            <div class="text-sm">{{ input_text }}</div>
+                        {% else %}
+                            <span class="text-gray-400">—</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                
+                <!-- Metrics for each job -->
+                {% for job in jobs %}
+                    <td class="metric-cell">
+                        {% with sample_result=job|get_sample_result:sample_idx %}
+                            {% if sample_result and sample_result.metrics %}
+                                <div class="space-y-2">
+                                    {% for metric_name, metric_value in sample_result.metrics|dict_items %}
+                                        {% if metric_name != 'hashcode' and metric_name != 'hash' and metric_name != 'version' and metric_name != 'model_info' and metric_name != 'config' %}
+                                            {% if metric_value|stringformat:"s" != "[]" %}
+                                                <div class="flex justify-between items-center">
+                                                    <div>
+                                                        <span class="text-xs font-medium text-gray-600 uppercase">
+                                                            {{ metric_name }}
+                                                        </span>
+                                                        {% get_source_metric_from_job job metric_name as source_metric %}
+                                                        {% if source_metric %}
+                                                            <div class="text-xs text-gray-500 normal-case">
+                                                                {{ source_metric }}
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <span class="metric-value text-sm {{ metric_value|normalize_metric_for_display:metric_name|get_metric_class }}">
+                                                        {{ metric_value|format_metric_list:2 }}
+                                                    </span>
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400 text-sm">No metrics</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        
+        <!-- Summary Row -->
+        {% if jobs.0.result.summary %}
+            <tr class="border-t-2 border-gray-300 bg-gray-50">
+                <td class="text-center font-bold text-gray-700">
+                    <i class="fas fa-chart-line mr-1"></i>
+                    Summary
+                </td>
+                <td class="text-sm font-medium text-gray-700">
+                    Overall Performance
+                </td>
+                {% for job in jobs %}
+                    <td class="metric-cell">
+                        {% if job.result.summary %}
+                            <div class="space-y-2">
+                                {% for metric_name, metric_stats in job.result.summary|dict_items %}
+                                    {% if metric_name != 'hashcode' and metric_name != 'hash' and metric_name != 'version' and metric_name != 'model_info' and metric_name != 'config' %}
+                                        {% if metric_stats|stringformat:"s" != "[]" %}
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-600 uppercase">
+                                                        {{ metric_name }}
+                                                    </span>
+                                                    {% if metric_stats|get_source_metric %}
+                                                        <div class="text-xs text-gray-500 normal-case">
+                                                            {{ metric_stats|get_source_metric }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="metric-value text-sm font-bold {{ metric_stats.mean|normalize_metric_for_display:metric_name|get_metric_class }}">
+                                                        {{ metric_stats.mean|format_metric_list }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        ±{{ metric_stats.std|format_metric_list:3 }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-gray-400 text-sm">No summary</span>
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<!-- Detailed Summary Statistics -->
+{% if jobs.0.result.summary %}
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <i class="fas fa-analytics mr-2"></i>
+            Detailed Performance Statistics
+        </h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-{{ jobs|length }} gap-6">
+            {% for job in jobs %}
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <div class="text-center mb-4">
+                        <h4 class="font-medium text-gray-900">Job #{{ job.id|short_id }}</h4>
+                        <p class="text-xs text-gray-500">{{ job.created_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    
+                    {% if job.result.summary %}
+                        {% for metric_name, metric_stats in job.result.summary|dict_items %}
+                            {% if metric_name != 'hashcode' and metric_name != 'hash' and metric_name != 'version' and metric_name != 'model_info' and metric_name != 'config' %}
+                                {% if metric_stats|stringformat:"s" != "[]" %}
+                                    <div class="mb-4 last:mb-0">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-700 uppercase">{{ metric_name }}</span>
+                                                {% if metric_stats|get_source_metric %}
+                                                    <div class="text-xs text-gray-500 normal-case">
+                                                        {{ metric_stats|get_source_metric }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <span class="text-sm font-mono {{ metric_stats.mean|normalize_metric_for_display:metric_name|get_metric_class }}">
+                                                {{ metric_stats.mean|format_metric_list }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                            <div>Min: {{ metric_stats.min|format_metric_list }}</div>
+                                            <div>Max: {{ metric_stats.max|format_metric_list }}</div>
+                                            <div>Std: {{ metric_stats.std|format_metric_list }}</div>
+                                            <div>Median: {{ metric_stats.median|format_metric_list }}</div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-gray-500 text-sm">
+                            No summary statistics available
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+{% if not samples_range %}
+    <div class="text-center py-8">
+        <i class="fas fa-exclamation-triangle text-4xl text-gray-300 mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-600 mb-2">No Metrics Available</h3>
+        <p class="text-gray-500">The selected jobs don't have any metrics to compare.</p>
+    </div>
+{% endif %}
