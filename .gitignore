@@ -14,3 +14,10 @@ site
 # Others
 processing/app/database/to_paraquet.py
 navigation/database.sqlite3
+
+# !! Download these from the links provided in the README !!
+# BM25 indices: place them in `processing/app/bm25_indices`.
+bm25_indices
+
+# Diagnostic data: place these in `processing/app/data`.
+processing/app/data
