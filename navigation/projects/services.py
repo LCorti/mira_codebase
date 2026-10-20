@@ -282,7 +282,7 @@ class ProcessingServiceSync:
                 Method.objects.filter(id=method.id).update(sync_status="error")
                 return False
 
-            response_data = response.json()
+            _ = response.json()
 
             Method.objects.filter(id=method.id).update(
                 sync_status="synced", last_synced=timezone.now()
