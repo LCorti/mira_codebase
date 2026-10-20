@@ -19,7 +19,7 @@ logger = LoggingService.setup_module_logger(__name__, log_filename="job.log")
 class JobCancelledException(Exception):
     """Exception raised when a job is cancelled during execution."""
 
-    pass
+    pass  # noqa
 
 
 def _get_methods_collection():
