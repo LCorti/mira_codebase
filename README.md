@@ -1,10 +1,12 @@
-# MIRA
+# MIRA: A Toolkit for Diagnosing LLM Behaviours
+
+*Lorenzo Corti*, Sebastiaan Beekman, Jie Yang.
 
 MIRA is a web-based toolkit for investigating undesirable behavior in language models. It brings together task evaluation, diagnostic tests, token attribution, and result comparison in a project-based workflow.
 
 The application separates a **Django navigation service**, which provides the interface, from a **FastAPI processing service**, which loads models and datasets, executes jobs, and stores evaluation results. Both services can run on one machine, or navigation can connect to a remote processing machine.
 
-> **Deployment status:** The included configurations are intended for development and controlled research environments. They are not hardened for public deployment. Read [Security and current limitations](#security-and-current-limitations) before exposing any service.
+> **Deployment status:** The included configurations are intended for development and controlled research environments. Read [Security and current limitations](#security-and-current-limitations) before deployment.
 
 ## Contents
 
