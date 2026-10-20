@@ -1,3 +1,3 @@
-code/processing/app/data/** filter=lfs diff=lfs merge=lfs -text
-code/processing/app/bm25_indices/**/*.npy filter=lfs diff=lfs merge=lfs -text
-code/processing/app/bm25_indices/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
+processing/app/data/** filter=lfs diff=lfs merge=lfs -text
+processing/app/bm25_indices/**/*.npy filter=lfs diff=lfs merge=lfs -text
+processing/app/bm25_indices/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
