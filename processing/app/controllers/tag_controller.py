@@ -1,33 +1,37 @@
-from typing import Dict, Any, List, Optional
 from contextlib import contextmanager
-
-from app.services.logging_service import LoggingService
+from typing import Any
 
 from app.models.tag import Tag
+from app.services.logging_service import LoggingService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="controllers.log")
+
 
 def _get_tags_collection():
     """
     Returns the tags collection from the database service.
     """
     from app.config.registry import get_database_service
+
     db_service = get_database_service()
     return db_service.get_collection("tags")
+
 
 def _get_jobs_collection():
     """
     Returns the jobs collection from the database service.
     """
     from app.config.registry import get_database_service
+
     db_service = get_database_service()
     return db_service.get_collection("jobs")
+
 
 class TagController:
     """
     Controller class for handling tag-related business logic.
     """
-    
+
     @staticmethod
     @contextmanager
     def database_transaction():
@@ -35,6 +39,7 @@ class TagController:
         Context manager for database transactions to reduce repetition.
         """
         from app.config.registry import get_database_service
+
         session = get_database_service().start_session()
         try:
             with session.start_transaction():
@@ -43,9 +48,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Transaction failed: {e}")
             raise
-    
+
     @staticmethod
-    def get_tag_by_id(tag_id: str) -> Dict[str, Any]:
+    def get_tag_by_id(tag_id: str) -> dict[str, Any]:
         """
         Retrieves a specific tag by its ID.
 
@@ -67,9 +72,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Error retrieving tag with ID {tag_id}: {e}")
             raise RuntimeError(f"Failed to retrieve tag with ID {tag_id}: {e}")
-    
+
     @staticmethod
-    def get_tag_by_name(name: str) -> Optional[Dict[str, Any]]:
+    def get_tag_by_name(name: str) -> dict[str, Any] | None:
         """
         Retrieves a specific tag by its name.
 
@@ -90,9 +95,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Error retrieving tag with name {name}: {e}")
             raise RuntimeError(f"Failed to retrieve tag with name {name}: {e}")
-    
+
     @staticmethod
-    def get_all_tags() -> List[Dict[str, Any]]:
+    def get_all_tags() -> list[dict[str, Any]]:
         """
         Retrieves all tags from the database.
 
@@ -112,9 +117,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Error retrieving all tags: {e}")
             raise RuntimeError(f"Failed to retrieve all tags: {e}")
-    
+
     @staticmethod
-    def get_tags_by_category(category: str) -> List[Dict[str, Any]]:
+    def get_tags_by_category(category: str) -> list[dict[str, Any]]:
         """
         Retrieves tags filtered by category.
 
@@ -137,9 +142,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Error retrieving tags by category {category}: {e}")
             raise RuntimeError(f"Failed to retrieve tags by category {category}: {e}")
-    
+
     @staticmethod
-    def search_tags(query: str) -> List[Dict[str, Any]]:
+    def search_tags(query: str) -> list[dict[str, Any]]:
         """
         Search tags by name, description, or category using text search.
 
@@ -158,10 +163,10 @@ class TagController:
                 "$or": [
                     {"name": {"$regex": query, "$options": "i"}},
                     {"description": {"$regex": query, "$options": "i"}},
-                    {"category": {"$regex": query, "$options": "i"}}
+                    {"category": {"$regex": query, "$options": "i"}},
                 ]
             }
-            
+
             tags_cursor = _get_tags_collection().find(search_filter)
             tags = []
             for tag_data in tags_cursor:
@@ -171,9 +176,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Error searching tags with query '{query}': {e}")
             raise RuntimeError(f"Failed to search tags with query '{query}': {e}")
-    
+
     @staticmethod
-    def get_categories() -> List[str]:
+    def get_categories() -> list[str]:
         """
         Get all unique categories from tags.
 
@@ -191,9 +196,9 @@ class TagController:
         except Exception as e:
             logger.error(f"Error retrieving tag categories: {e}")
             raise RuntimeError(f"Failed to retrieve tag categories: {e}")
-    
+
     @staticmethod
-    def create_tag_instance(tag: Tag) -> Dict[str, Any]:
+    def create_tag_instance(tag: Tag) -> dict[str, Any]:
         """
         Creates a new tag instance in the database (allows duplicates by name since instances can be applied multiple times).
 
@@ -210,35 +215,39 @@ class TagController:
             with TagController.database_transaction():
                 tag_insert = _get_tags_collection().insert_one(tag.to_dict())
                 if not tag_insert.acknowledged:
-                    logger.error(f"Failed to create tag instance.")
-                    raise RuntimeError(f"Failed to create tag instance.")
-                
+                    logger.error("Failed to create tag instance.")
+                    raise RuntimeError("Failed to create tag instance.")
+
                 # Update corresponding job to include this tag instance
                 from app.models.job import Job
+
                 job_collection = _get_jobs_collection()
                 job = job_collection.find_one({"id": str(tag.job_id)})
                 if not job:
                     logger.error(f"Job with ID {tag.job_id} not found for tagging.")
                     raise ValueError(f"Job with ID {tag.job_id} not found.")
-                
+
                 job_obj = Job(**job)
                 if tag.id in job_obj.tag_ids:
-                    logger.info(f"Tag ID {tag.id} already associated with Job ID {tag.job_id}.")
-                    raise ValueError(f"Tag ID {tag.id} already associated with Job ID {tag.job_id}.")
-                
+                    logger.info(
+                        f"Tag ID {tag.id} already associated with Job ID {tag.job_id}."
+                    )
+                    raise ValueError(
+                        f"Tag ID {tag.id} already associated with Job ID {tag.job_id}."
+                    )
+
                 job_obj.tag_ids.append(tag.id)
                 job_collection.update_one(
-                    {"id": str(tag.job_id)},
-                    {"$set": {"tag_ids": job_obj.tag_ids}}
+                    {"id": str(tag.job_id)}, {"$set": {"tag_ids": job_obj.tag_ids}}
                 )
-                    
+
                 return tag.to_dict()
         except Exception as e:
             logger.error(f"Error creating tag instance: {e}")
             raise RuntimeError(f"Failed to create tag instance: {e}")
-    
+
     @staticmethod
-    def create_tag(tag: Tag) -> Dict[str, Any]:
+    def create_tag(tag: Tag) -> dict[str, Any]:
         """
         Creates a new tag in the database.
 
@@ -257,18 +266,18 @@ class TagController:
                 existing_tag = _get_tags_collection().find_one({"name": tag.name})
                 if existing_tag:
                     raise ValueError(f"Tag with name '{tag.name}' already exists.")
-                
+
                 tag_insert = _get_tags_collection().insert_one(tag.to_dict())
                 if not tag_insert.acknowledged:
-                    logger.error(f"Failed to create tag.")
-                    raise RuntimeError(f"Failed to create tag.")
+                    logger.error("Failed to create tag.")
+                    raise RuntimeError("Failed to create tag.")
                 return tag.to_dict()
         except Exception as e:
             logger.error(f"Error creating tag: {e}")
             raise RuntimeError(f"Failed to create tag: {e}")
-    
+
     @staticmethod
-    def update_tag(tag_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+    def update_tag(tag_id: str, updates: dict[str, Any]) -> dict[str, Any]:
         """
         Updates an existing tag in the database.
 
@@ -285,18 +294,18 @@ class TagController:
         try:
             with TagController.database_transaction():
                 # Add updated_at timestamp
-                from datetime import datetime, timezone
-                updates['updated_at'] = datetime.now(timezone.utc)
-                
+                import datetime
+
+                updates["updated_at"] = datetime.now(datetime.UTC)
+
                 update_result = _get_tags_collection().update_one(
-                    {"id": str(tag_id)},
-                    {"$set": updates}
+                    {"id": str(tag_id)}, {"$set": updates}
                 )
-                
+
                 if update_result.matched_count == 0:
                     logger.warning(f"Tag with ID {tag_id} not found for update.")
                     raise ValueError(f"Tag with ID {tag_id} not found.")
-                
+
                 # Return the updated tag
                 updated_tag = _get_tags_collection().find_one({"id": str(tag_id)})
                 return Tag(**updated_tag).to_dict()
@@ -329,14 +338,14 @@ class TagController:
         except Exception as e:
             logger.error(f"Error deleting tag with ID {tag_id}: {e}")
             raise RuntimeError(f"Failed to delete tag with ID {tag_id}: {e}")
-    
+
     @staticmethod
-    def bulk_create_tags(tags: List[Tag]) -> List[Dict[str, Any]]:
+    def bulk_create_tags(tags: list[Tag]) -> list[dict[str, Any]]:
         """
         Creates multiple tags in the database.
 
         Args:
-            tags (List[Tag]): List of tag objects to create.
+            tags (list[Tag]): List of tag objects to create.
 
         Returns:
             list: List of created tags serialized as dictionaries.
@@ -348,19 +357,21 @@ class TagController:
             with TagController.database_transaction():
                 # Check for existing tags with same names
                 tag_names = [tag.name for tag in tags]
-                existing_tags = list(_get_tags_collection().find({"name": {"$in": tag_names}}))
+                existing_tags = list(
+                    _get_tags_collection().find({"name": {"$in": tag_names}})
+                )
                 existing_names = [tag["name"] for tag in existing_tags]
-                
+
                 if existing_names:
                     raise ValueError(f"Tags with names {existing_names} already exist.")
-                
+
                 tag_dicts = [tag.to_dict() for tag in tags]
                 insert_result = _get_tags_collection().insert_many(tag_dicts)
-                
+
                 if not insert_result.acknowledged:
-                    logger.error(f"Failed to create tags in bulk.")
-                    raise RuntimeError(f"Failed to create tags in bulk.")
-                
+                    logger.error("Failed to create tags in bulk.")
+                    raise RuntimeError("Failed to create tags in bulk.")
+
                 return tag_dicts
         except Exception as e:
             logger.error(f"Error creating tags in bulk: {e}")
