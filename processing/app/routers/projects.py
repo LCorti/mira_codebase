@@ -1,10 +1,10 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
-from app.services.logging_service import LoggingService
-
 from app.controllers.project_controller import ProjectController
-
 from app.models.project import Project, ProjectUpdate
+from app.services.logging_service import LoggingService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="routes.log")
 
@@ -13,9 +13,12 @@ router = APIRouter(
     tags=["projects"],
 )
 
+
 @router.get("", tags=["projects"])
 async def index(
-    include: set[str] | None = Query(None, description="Relations to include"),
+    include: Annotated[
+        set[str] | None, Query(description="Relations to include")
+    ] = None,
 ):
     """
     Returns a list of all projects in the database.
@@ -25,13 +28,16 @@ async def index(
         list[Project]: List of all projects serialized as Project models.
     Raises:
         RuntimeError: If there is an error retrieving projects from the database.
-    """    
+    """
     return ProjectController.get_all_projects(include=include)
+
 
 @router.get("/{project_id}", tags=["projects"])
 async def show(
     project_id: str,
-    include: set[str] | None = Query(None, description="Relations to include"),
+    include: Annotated[
+        set[str] | None, Query(description="Relations to include")
+    ] = None,
 ):
     """
     Returns a specific project by its ID.
@@ -45,10 +51,9 @@ async def show(
     """
     return ProjectController.get_project_by_id(project_id, include=include)
 
+
 @router.post("", tags=["projects"])
-async def create(
-    project: Project
-):
+async def create(project: Project):
     """
     Creates a new project in the database.
     Args:
@@ -62,6 +67,7 @@ async def create(
         RuntimeError: If there is an error creating the project in the database.
     """
     return ProjectController.create_project(project)
+
 
 @router.post("/duplicate-tests-and-methods", status_code=201)
 async def duplicate_tests_and_methods(
@@ -83,14 +89,20 @@ async def duplicate_tests_and_methods(
         RuntimeError: If there is an error creating the project in the database.
     """
     project_dict = ProjectController.get_project_by_id(project_id, include={})
-    return ProjectController.duplicate_tests_and_methods(test_ids=test_ids, project=Project(**project_dict), auto_run=auto_run, group_id=group_id)
+    return ProjectController.duplicate_tests_and_methods(
+        test_ids=test_ids,
+        project=Project(**project_dict),
+        auto_run=auto_run,
+        group_id=group_id,
+    )
+
 
 @router.post("/create-with-tests-and-methods", status_code=201)
 async def create_with_tests_and_methods(
     project: Project,
     datasets: list[str],
     metrics: dict[str, list[str]],
-    auto_run: bool = False
+    auto_run: bool = False,
 ):
     """
     Creates a new project in the database along with associated tests and methods.
@@ -104,13 +116,13 @@ async def create_with_tests_and_methods(
     Raises:
         RuntimeError: If there is an error creating the project in the database.
     """
-    return ProjectController.create_project_with_tests_and_methods(project, datasets, metrics, auto_run)
+    return ProjectController.create_project_with_tests_and_methods(
+        project, datasets, metrics, auto_run
+    )
+
 
 @router.put("/{project_id}", tags=["projects"])
-async def update(
-    project_id: str, 
-    project: ProjectUpdate
-):
+async def update(project_id: str, project: ProjectUpdate):
     """
     Updates an existing project in the database.
     Args:
@@ -123,10 +135,9 @@ async def update(
     """
     return ProjectController.update_project(project_id, project)
 
+
 @router.delete("/{project_id}", tags=["projects"])
-async def delete(
-    project_id: str
-):
+async def delete(project_id: str):
     """
     Deletes a project from the database.
     Args:

@@ -1,10 +1,8 @@
 from fastapi import APIRouter
 
-from app.services.logging_service import LoggingService
-
 from app.controllers.result_controller import ResultController
-
 from app.models.result import Result, ResultUpdate
+from app.services.logging_service import LoggingService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="routes.log")
 
@@ -12,6 +10,7 @@ router = APIRouter(
     prefix="/results",
     tags=["results"],
 )
+
 
 @router.get("", status_code=200)
 async def index():
@@ -23,8 +22,9 @@ async def index():
         list[Result]: List of all results serialized as Result models.
     Raises:
         RuntimeError: If there is an error retrieving results from the database.
-    """    
+    """
     return ResultController.get_all_results()
+
 
 @router.get("/{result_id}", status_code=200)
 async def show(
@@ -41,10 +41,9 @@ async def show(
     """
     return ResultController.get_result_by_id(result_id)
 
+
 @router.post("", status_code=201)
-async def create(
-    result: Result
-):
+async def create(result: Result):
     """
     Creates a new result in the database.
     Args:
@@ -56,11 +55,9 @@ async def create(
     """
     return ResultController.create_result(result)
 
+
 @router.put("/{result_id}", status_code=200)
-async def update(
-    result_id: str, 
-    result: ResultUpdate
-):
+async def update(result_id: str, result: ResultUpdate):
     """
     Updates an existing result in the database.
     Args:
@@ -73,10 +70,9 @@ async def update(
     """
     return ResultController.update_result(result_id, result)
 
+
 @router.delete("/{result_id}", status_code=204)
-async def delete(
-    result_id: str
-):
+async def delete(result_id: str):
     """
     Deletes a result from the database.
     Args:

@@ -1,11 +1,10 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
-from app.services.logging_service import LoggingService
-
 from app.controllers.test_controller import TestController
-from app.controllers.job_controller import JobController
-
 from app.models.test import Test, TestUpdate
+from app.services.logging_service import LoggingService
 
 logger = LoggingService.setup_module_logger(__name__, log_filename="routes.log")
 
@@ -14,9 +13,12 @@ router = APIRouter(
     tags=["tests"],
 )
 
+
 @router.get("", status_code=200)
 async def index(
-    include: set[str] | None = Query(None, description="Relations to include"),
+    include: Annotated[
+        set[str] | None, Query(description="Relations to include")
+    ] = None,
 ):
     """
     Returns a list of all tests in the database.
@@ -28,6 +30,7 @@ async def index(
         RuntimeError: If there is an error retrieving tests from the database.
     """
     return TestController.get_all_tests(include)
+
 
 @router.get("/default", status_code=200)
 async def get_default_tests():
@@ -42,10 +45,13 @@ async def get_default_tests():
     """
     return TestController.get_all_default_tests()
 
+
 @router.get("/{test_id}", status_code=200)
 async def show(
     test_id: str,
-    include: set[str] | None = Query(None, description="Relations to include"),
+    include: Annotated[
+        set[str] | None, Query(description="Relations to include")
+    ] = None,
 ):
     """
     Returns a specific test by its ID.
@@ -58,10 +64,9 @@ async def show(
     """
     return TestController.get_test_by_id(test_id, include=include)
 
+
 @router.post("/create", status_code=201)
-async def create(
-    test: Test
-):
+async def create(test: Test):
     """
     Creates a new test in the database.
     Args:
@@ -73,11 +78,12 @@ async def create(
     """
     return TestController.create_test(test)
 
+
 @router.post("/create-with-methods", status_code=201)
 async def create_with_methods(
     test: Test,
-    datasets: list[str] = None,
-    metrics: dict[str, list[str]] = None
+    datasets: list[str] | None = None,
+    metrics: dict[str, list[str]] | None = None,
 ):
     """
     Creates a new test with associated methods in the database.
@@ -92,11 +98,9 @@ async def create_with_methods(
     """
     return TestController.create_test_with_methods(test, datasets, metrics)
 
+
 @router.put("/{test_id}", status_code=200)
-async def update(
-    test_id: str, 
-    test: TestUpdate
-):
+async def update(test_id: str, test: TestUpdate):
     """
     Updates an existing test in the database.
     Args:
@@ -109,10 +113,9 @@ async def update(
     """
     return TestController.update_test(test_id, test)
 
+
 @router.delete("/{test_id}", status_code=204)
-async def delete(
-    test_id: str
-):
+async def delete(test_id: str):
     """
     Deletes a test from the database.
     Args:
@@ -124,10 +127,9 @@ async def delete(
     """
     return TestController.delete_test(test_id)
 
+
 @router.get("/{test_id}/methods", tags=["tests"])
-async def get_test_methods(
-    test_id: str
-):
+async def get_test_methods(test_id: str):
     """
     Returns all methods associated with a specific test.
     Args:
