@@ -10,8 +10,8 @@ logger = LoggingService.setup_module_logger(__name__)
 class TaskService:
     def __init__(
         self,
-        config_path=os.path.join(CONFIG_DIR, "tasks.json"),
-        available_tasks_config_path=os.path.join(CONFIG_DIR, "available_tasks.json"),
+        config_path=None,
+        available_tasks_config_path=None,
     ):
         """
         Initializes the TaskService with the directory for tasks and the configuration file path.
@@ -20,8 +20,17 @@ class TaskService:
         Raises:
             FileNotFoundError: If the specified task directory or configuration file does not exist.
         """
-        self.__config_path = config_path
-        self.__available_tasks_config_path = available_tasks_config_path
+
+        if not config_path:
+            self.__config_path = os.path.join(CONFIG_DIR, "tasks.json")
+        else:
+            self.__config_path = config_path
+        if not available_tasks_config_path:
+            self.__available_tasks_config_path = os.path.join(
+                CONFIG_DIR, "available_tasks.json"
+            )
+        else:
+            self.__available_tasks_config_path = available_tasks_config_path
         self.__available_tasks = None
         self.__tasks = None
 

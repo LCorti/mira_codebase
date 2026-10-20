@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from typing import ClassVar
 
 from app.config.paths import LOGS_DIR
 
@@ -11,7 +12,7 @@ class LoggingService:
     Each logger writes to its own log file and optionally to console.
     """
 
-    _loggers = {}  # Cache for created loggers
+    _loggers: ClassVar[dict[str, logging.Logger]] = {}  # Cache for created loggers
 
     def __init__(self) -> None:
         if not LOGS_DIR.exists():

@@ -32,7 +32,7 @@ DEFAULT_MODELS = [
 
 
 class ModelLoaderService:
-    def __init__(self, config_path=os.path.join(CONFIG_DIR, "models.json")):
+    def __init__(self, config_path=None):
         """
         Initializes the ModelLoader with the directory for models, tokenizers, and the configuration file path.
         Args:
@@ -42,7 +42,10 @@ class ModelLoaderService:
         Raises:
             FileNotFoundError: If the specified directories or configuration file do not exist.
         """
-        self.__config_path = config_path
+        if not config_path:
+            self.__config_path = os.path.join(CONFIG_DIR, "models.json")
+        else:
+            self.__config_path = config_path
         self.__model = None
         self.__model_name = None
         self.__model_type = None
