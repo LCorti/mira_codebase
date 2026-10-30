@@ -29,19 +29,13 @@ The application separates a **Django navigation service**, which provides the in
 
 The processing service implements three main inference workflows:
 
-| Task | Workflow | Included model |
-|---|---|---|
-| Text retrieval | BM25 candidate retrieval followed by cross-encoder reranking | `Alibaba-NLP/gte-reranker-modernbert-base` |
-| Summarization | Encoder-decoder text generation | `pszemraj/long-t5-tglobal-base-16384-book-summary` |
-| Text simplification | Chat-template-based causal language-model generation | `Qwen/Qwen2-1.5B-Instruct` |
+| Task | Workflow | Included model | Dataset(s) |
+|---|---|---|---|
+| Text retrieval | BM25 candidate retrieval followed by cross-encoder reranking | `Alibaba-NLP/gte-reranker-modernbert-base` | (1) [`dtk-llms/mira_rag_queries`](https://huggingface.co/datasets/dtk-llms/mira_rag_queries), (2) [`dtk-llms/mira_rag_corpus`](https://huggingface.co/datasets/dtk-llms/mira_rag_corpus), and (3) [`dtk-llms/mira_rag_qrels`](https://huggingface.co/datasets/dtk-llms/mira_rag_qrels) |
+| Summarization | Encoder-decoder text generation | `pszemraj/long-t5-tglobal-base-16384-book-summary` | [`dtk-llms/mira_summarization`](https://huggingface.co/datasets/dtk-llms/mira_summarization) |
+| Text simplification | Chat-template-based causal language-model generation | `Qwen/Qwen2-1.5B-Instruct` | [`dtk-llms/mira_simplification`](https://huggingface.co/datasets/dtk-llms/mira_simplification) |
 
-The included task datasets are:
-
-- `dtk-llms/mira_rag_queries`
-- `dtk-llms/mira_summarization`
-- `dtk-llms/mira_simplification`
-
-Additional Hugging Face model and dataset IDs can be configured, provided they are compatible with the relevant inference path. Catalog registration does not guarantee compatibility with every task, metric, or diagnostic.
+Additional Hugging Face model and dataset IDs can be configured, provided they are compatible with the relevant inference path.
 
 The retrieval workflow returns ranked documents; it does **not** implement answer generation over retrieved content.
 
